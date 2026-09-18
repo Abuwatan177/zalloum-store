@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Zalloum Store</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    <style> 
+        @font-face {
+            font-family: 'Jost';
+            src: url('/assets/fonts/jost-400.ttf') format('truetype');
+            font-style: normal;
+            font-weight: 400;
+            font-display: block;
+        }
+        @font-face {
+            font-family: 'Jost';
+            src: url('/assets/fonts/jost-500.ttf') format('truetype');
+            font-style: normal;
+            font-weight: 500;
+            font-display: block;
+        }
+        @font-face {
+            font-family: 'Jost';
+            src: url('/assets/fonts/jost-600.ttf') format('truetype');
+            font-style: normal;
+            font-weight: 600;
+            font-display: block;
+        }
+        @font-face {
+            font-family: 'Jost';
+            src: url('/assets/fonts/jost-700.ttf') format('truetype');
+            font-style: normal;
+            font-weight: 700;
+            font-display: block;
+        }
+        @font-face {
+            font-family: 'Jost';
+            src: url('/assets/fonts/jost-800.ttf') format('truetype');
+            font-style: normal;
+            font-weight: 800;
+            font-display: block;
+        }
+        @font-face {
+            font-family: 'Jost';
+            src: url('/assets/fonts/jost-900.ttf') format('truetype');
+            font-style: normal;
+            font-weight: 900;
+            font-display: block;
+        }
+        body { 
+            /*
+             * Jost comes first so every Latin letter and Western digit is
+             * rendered consistently. Jost has no Arabic glyphs, so the
+             * browser automatically falls back to the Arabic font per glyph.
+             */
+            font-family: 'Jost', 'GE SS Two', 'GE SS Two Medium', 'Tajawal', Arial, sans-serif !important;
+            background-color: #F4F1EA; 
+            color: #121212; 
+            text-align: right; 
+            font-synthesis: none;
+        } 
+        /*
+         * Keep all controls and generated content on the same global font
+         * stack. The fallback is only used for characters Jost cannot draw.
+         */
+        input, textarea, button, select, option, output, .en-font, .price-tag, :lang(en), .number {
+            font-family: 'Jost', 'GE SS Two', 'GE SS Two Medium', 'Tajawal', Arial, sans-serif !important;
+            font-variant-numeric: lining-nums;
+        }
+
+        .en-font, .price-tag, :lang(en), .number {
+            direction: ltr;
+            unicode-bidi: plaintext;
+        }
+        .gold-accent { color: #D4AF37; }
+        .gold-bg { background-color: #D4AF37; }
+        .gold-bg:hover { background-color: #C5A059; }
+        .gold-border { border-color: #D4AF37; }
+
+        .light-theme {
+            background-color: #ffffff !important;
+            color: #121212 !important;
+        }
+        .light-theme header,
+        .light-theme footer,
+        .light-theme main > section:first-child,
+        .light-theme main > section:nth-child(2) {
+            background: #ffffff !important;
+            color: #121212 !important;
+            border-color: #121212 !important;
+        }
+        .light-theme [class~="text-white"],
+        .light-theme [class~="text-gray-300"],
+        .light-theme [class~="text-gray-400"],
+        .light-theme [class~="text-gray-500"] {
+            color: #121212 !important;
+        }
+        .light-theme [class~="bg-[#1A1A1A]"],
+        .light-theme [class~="bg-[#121212]"],
+        .light-theme [class~="bg-[#121212]/95"] {
+            background-color: #ffffff !important;
+        }
+        .light-theme [class~="border-gray-800"],
+        .light-theme [class~="border-[#1A1A1A]"] {
+            border-color: #121212 !important;
+        }
+        .light-theme .gold-accent {
+            color: #121212 !important;
+        }
+        .light-theme .gold-bg,
+        .light-theme .gold-bg:hover {
+            background-color: #121212 !important;
+            color: #ffffff !important;
+        }
+        .light-theme .gold-border {
+            border-color: #121212 !important;
+        }
+        .light-theme header input {
+            background-color: #ffffff !important;
+            color: #121212 !important;
+            border-color: #121212 !important;
+        }
+        .light-theme header input::placeholder {
+            color: #4b5563 !important;
+        }
+        .theme-toggle {
+            min-width: 2.75rem;
+            min-height: 2.75rem;
+        }
+        .store-logo {
+            width: 7rem;
+            max-height: 3.25rem;
+            object-fit: contain;
+            transition: width 300ms ease, max-height 300ms ease, transform 300ms ease;
+        }
+        .store-logo.is-scrolled {
+            width: 5.25rem;
+            max-height: 2.5rem;
+        }
+
+        @keyframes scrollMarquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(calc(-100% + 100vw)); }
+        }
+        .animate-marquee {
+            display: flex;
+            width: max-content;
+            animation: scrollMarquee 32s linear infinite;
+            will-change: transform;
+        }
+        .animate-marquee:hover {
+            animation-play-state: paused;
+        }
+        @keyframes cartAdded {
+            0% { transform: scale(1); }
+            45% { transform: scale(1.06); box-shadow: 0 0 0 6px rgba(212, 175, 55, 0.18); }
+            100% { transform: scale(1); }
+        }
+        .cart-added-animation { animation: cartAdded 520ms ease-out; }
+
+        html, body {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        button, a, input, textarea, select {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        @media (max-width: 640px) {
+            header > div {
+                flex-wrap: wrap;
+                gap: 0.5rem 0.75rem;
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+
+            header > div > a {
+                order: 1 !important;
+                min-width: 0;
+                font-size: 1.05rem;
+                letter-spacing: 0;
+            }
+
+            header > div > button {
+                order: 2 !important;
+                flex: 0 0 auto;
+            }
+
+            header > div > div {
+                order: 3 !important;
+                flex: 1 0 100%;
+                max-width: none;
+                width: 100%;
+            }
+
+            header input {
+                min-height: 2.75rem;
+            }
+
+            main > section:first-child {
+                padding-top: 3rem;
+                padding-bottom: 3rem;
+            }
+
+            main > section:first-child h1 {
+                font-size: 2rem;
+            }
+
+            main > section:first-child img {
+                max-height: 18rem;
+            }
+
+            #products {
+                padding-left: 1rem;
+                padding-right: 1rem;
+                padding-top: 3rem;
+                padding-bottom: 3rem;
+            }
+
+            #products > div:nth-child(2) {
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+
+            #products > div:nth-child(2) h2 {
+                font-size: 1.25rem;
+            }
+
+            [x-show="selectedProduct"] > div {
+                margin-top: 1rem;
+                border-radius: 1.25rem;
+            }
+
+            [x-show="selectedProduct"] .grid.md\:grid-cols-2 {
+                padding: 1rem;
+            }
+
+            [x-show="selectedProduct"] h2 {
+                font-size: 1.75rem;
+            }
+
+            [x-show="cartOpen"] > div:last-child {
+                max-width: none;
+                padding: 1rem;
+            }
+
+            [x-show="cartOpen"] input,
+            [x-show="cartOpen"] button,
+            [x-show="adminLoginOpen"] input,
+            [x-show="adminLoginOpen"] button {
+                min-height: 2.75rem;
+            }
+
+            [x-show="showDashboard"] {
+                padding-left: 1rem;
+                padding-right: 1rem;
+                padding-top: 1.5rem;
+                padding-bottom: 2rem;
+            }
+
+            [x-show="showDashboard"] > div:first-child {
+                align-items: stretch;
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            [x-show="showDashboard"] > div:first-child button {
+                width: 100%;
+            }
+
+            [x-show="showDashboard"] .grid {
+                gap: 1rem;
+            }
+
+            [x-show="showDashboard"] .bg-white {
+                padding: 1rem;
+            }
+
+            [x-show="showDashboard"] table {
+                min-width: 44rem;
+            }
+
+            [x-show="showDashboard"] .overflow-x-auto {
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: thin;
+            }
+
+            footer {
+                margin-top: 3rem;
+                padding-top: 2rem;
+                padding-bottom: 2rem;
+            }
+        }
+    </style>
+</head>
+<body x-data="storeApp()" :class="{ 'light-theme': lightTheme }" :lang="language" :dir="language === 'he' ? 'ltr' : 'rtl'" @scroll.window="scrolled = (window.pageYOffset > 30)">
+
+    <!-- الترويسة التفاعلية -->
+    <header :class="scrolled ? 'bg-[#121212] shadow-xl py-3' : 'bg-[#121212]/95 py-5'" class="sticky top-0 z-40 backdrop-blur-md border-b border-[#1A1A1A] transition-all duration-300 text-white">
+        <div class="max-w-7xl mx-auto px-6 flex items-center justify-between gap-6">
+            <a href="#" class="text-2xl font-black tracking-wider flex items-center gap-1 text-white order-1" aria-label="العودة إلى المتجر">
+                <img x-show="activeLogoImage()" :src="assetUrl(activeLogoImage())" alt="شعار المتجر" class="store-logo" :class="{ 'is-scrolled': scrolled }">
+                <span x-show="!activeLogoImage()" class="gold-accent font-extrabold">STORE</span><span x-show="!activeLogoImage()" class="font-extrabold">ZALLOUM</span>
+            </a>
+            <div class="flex-1 max-w-md relative order-2">
+                <input type="text" x-model="searchQuery" @keydown.enter.prevent="tryHiddenDashboard()" @keyup.enter.prevent="tryHiddenDashboard()" onkeydown="if(event.key === 'Enter') window.loginOwnerFromSearch(event)" :placeholder="t('search')" 
+                    class="w-full bg-[#1A1A1A] text-sm text-white placeholder-gray-400 px-4 py-2.5 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D4AF37] border border-gray-800 transition text-right">
+                <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </span>
+            </div>
+            <button @click="toggleTheme()" class="theme-toggle relative p-2 text-gray-300 hover:text-[#D4AF37] transition flex items-center justify-center order-3" :aria-label="lightTheme ? 'تفعيل الوضع الداكن' : 'تفعيل الوضع الفاتح'" :title="lightTheme ? 'الوضع الداكن' : 'الوضع الفاتح'">
+                <i class="fa-solid" :class="lightTheme ? 'fa-moon' : 'fa-sun'"></i>
+            </button>
+            <button @click="toggleLanguage()" class="px-3 py-2 rounded-xl border border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black transition text-sm font-bold order-3" :aria-label="language === 'ar' ? 'تبديل إلى العبرية' : 'מעבר לערבית'" x-text="language === 'ar' ? 'עברית' : 'عربي'"></button>
+            <button @click="cartOpen = true" class="relative p-2 text-gray-300 hover:text-[#D4AF37] transition flex items-center order-3">
+                <i class="fa-solid fa-cart-shopping text-2xl"></i>
+                <span dir="ltr" class="number absolute -top-1 -right-1 gold-bg text-black text-[10px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center shadow-md" x-text="toEnglishNumber(cart.length)"></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- واج ة المتجر الرئيسية -->
+    <main x-show="!showDashboard">
+        <div x-show="storeError" class="bg-rose-50 border-b border-rose-200 text-rose-800 px-6 py-4 text-center text-sm font-bold" role="alert" style="display:none">
+            <span x-text="storeError"></span>
+        </div>
+        <section class="relative bg-gradient-to-br from-[#121212] via-[#1A1A1A] to-[#121212] py-16 px-6 overflow-hidden text-white">
+            <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                <div class="space-y-6 text-right">
+                    <span class="inline-block bg-[#D4AF37]/15 gold-accent text-xs font-bold px-4 py-1.5 rounded-full border border-[#D4AF37]/30">
+                        <span x-text="homepageText[language].season"></span>
+                    </span>
+                    <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black text-white" style="line-height: 1.4 !important;">
+                        <span x-text="homepageText[language].heroTitle"></span> <span class="gold-accent" x-text="homepageText[language].styleComfort"></span>
+                    </h1>
+                    <p class="text-gray-300 text-base leading-relaxed max-w-xl">
+                        <span x-text="homepageText[language].heroDescription"></span>
+                    </p>
+                    <div class="flex flex-wrap gap-4 justify-start">
+                        <a href="#products" class="gold-bg text-black font-bold px-8 py-4 rounded-xl transition shadow-lg shadow-[#D4AF37]/20">
+                            <span x-text="homepageText[language].shopNow"></span>
+                        </a>
+                    </div>
+
+                    <div x-show="adminLoginOpen" class="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-6" style="display:none">
+                        <form @submit.prevent="login" class="bg-white rounded-2xl p-6 w-full max-w-sm space-y-4 text-right">
+                            <h2 class="text-xl font-bold">دخول لوحة المالك</h2>
+                            <input type="password" x-model="loginPassword" placeholder="كلمة المرور" class="w-full border rounded-xl p-3" required autofocus>
+                            <p x-show="loginError" class="text-red-600 text-sm" x-text="loginError"></p>
+                            <div class="flex gap-3"><button class="flex-1 gold-bg text-black font-bold rounded-xl p-3">دخول</button><button type="button" @click="adminLoginOpen=false" class="flex-1 bg-gray-100 rounded-xl p-3">إلغاء</button></div>
+                        </form>
+                    </div>
+                </div>
+                <div class="relative flex justify-center">
+                    <div class="absolute w-72 h-72 bg-[#D4AF37]/10 rounded-full blur-3xl -top-10 -right-10 pointer-events-none"></div>
+                    <div class="relative z-10 w-full max-w-md aspect-square rounded-3xl overflow-hidden shadow-2xl border border-gray-800 transform -rotate-3 hover:rotate-0 transition duration-500">
+                        <template x-for="(image, index) in (heroImages.length ? heroImages : [defaultHeroImage])" :key="image + '-' + index">
+                            <img x-show="heroIndex === index" x-transition:enter="transition-opacity duration-700 ease-out" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity duration-700 ease-in" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" :src="assetUrl(image)" alt="Hero Sneaker" class="absolute inset-0 w-full h-full object-cover">
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- سكرول تلقائي لصور المنتجات المضافة من الداشبورد -->
+        <section :aria-label="language === 'he' ? 'תמונות מוצרי החנות' : 'صور منتجات المتجر'" class="bg-[#1A1A1A] py-8 overflow-hidden border-y border-gray-800">
+            <div class="max-w-7xl mx-auto px-6 mb-5 flex items-center justify-between gap-4">
+                <div>
+                    <p class="gold-accent text-xs font-bold tracking-widest uppercase" data-i18n="</p>
+                    <h2 class="text-white text-xl sm:text-2xl font-black" x-text="homepageText[language].storeProducts"></h2>
+                </div>
+                <span class="text-gray-400 text-xs number" x-show="products.length" x-text="toEnglishNumber(products.length) + ' ' + t('product')"></span>
+            </div>
+            <div class="flex overflow-hidden relative w-full" x-show="uniqueCarouselProducts().length">
+                <div class="flex gap-5 items-center" :class="uniqueCarouselProducts().length > 1 ? 'animate-marquee' : 'justify-center w-full'" dir="ltr">
+                    <template x-for="product in uniqueCarouselProducts()" :key="product.id">
+                                <a href="#products" class="w-52 h-36 sm:w-64 sm:h-44 bg-[#121212] rounded-2xl overflow-hidden border border-gray-800 flex-shrink-0 relative group shadow-md block">
+                                    <img :src="assetUrl(product.image)" :alt="product.name" loading="lazy" decoding="async" class="w-full h-full object-cover group-hover:scale-110 transition duration-500 opacity-80 group-hover:opacity-100">
+                                </a>
+                    </template>
+                </div>
+            </div>
+            <div x-show="!products.length" class="max-w-7xl mx-auto px-6 text-center text-gray-500 text-sm py-6">
+               
+            </div>
+        </section>
+
+        <!-- أقسام المنتجات: قسم واحد فقط لكل تسمية -->
+        <section id="products" class="max-w-7xl mx-auto px-6 py-16">
+            <div x-show="products.length" class="flex gap-2 overflow-x-auto pb-6 mb-8">
+                <button @click="activeCategory = 'الكل'" :class="activeCategory === 'الكل' ? 'bg-[#121212] text-white border-[#121212]' : 'bg-white text-gray-700 border-gray-200'" class="whitespace-nowrap border hover:border-[#D4AF37] px-4 py-2 rounded-full text-sm font-bold transition" x-text="t('all')"></button>
+                <template x-for="category in categories()" :key="'filter-' + category">
+                    <button @click="activeCategory = category" :class="activeCategory === category ? 'bg-[#121212] text-white border-[#121212]' : 'bg-white text-gray-700 border-gray-200'" class="whitespace-nowrap border hover:border-[#D4AF37] px-4 py-2 rounded-full text-sm font-bold transition" x-text="category"></button>
+                </template>
+            </div>
+            <div class="flex items-center justify-between mb-6 border-r-4 gold-border pr-3">
+                <h2 class="text-2xl font-bold text-[#121212]" x-text="activeCategory === 'الكل' ? t('allProducts') : activeCategory"></h2>
+                <span class="text-xs text-gray-500 font-bold number" x-text="toEnglishNumber(filteredProducts().length) + ' ' + t('product')"></span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <template x-for="product in filteredProducts()" :key="product.id">
+                    <div @click="openProduct(product)" class="bg-white rounded-2xl overflow-hidden border border-gray-200 flex flex-col justify-between p-4 shadow-sm hover:shadow-md transition text-right cursor-pointer">
+                                <div>
+                                    <div class="h-48 rounded-xl overflow-hidden bg-gray-100 mb-4">
+                                        <img :src="assetUrl(selectedVariant(product)?.image || product.image)" :alt="product.name" loading="lazy" decoding="async" class="w-full h-full object-cover">
+                                    </div>
+                                    <h3 class="font-bold text-lg text-gray-900 mt-2 truncate" x-text="product.name"></h3>
+                                    <p class="gold-accent font-black text-xl my-1 number" x-text="'₪ ' + toEnglishNumber(product.price)"></p>
+                                    <p class="text-gray-500 text-xs line-clamp-2 leading-relaxed" x-text="product.description"></p>
+                                    <div x-show="productSizes(product).length" class="mt-3" @click.stop>
+                                        <p class="text-xs font-bold text-gray-700 mb-1" x-text="t('chooseSize')"></p>
+                                        <div class="flex flex-wrap gap-2">
+                                            <template x-for="size in productSizes(product)" :key="'card-size-' + product.id + size">
+                                                <button type="button" @click="selectVariantOption(product, 'size', size)" :disabled="!variantOptionAvailable(product, 'size', size)" :class="product.selectedSize === size ? 'bg-[#121212] text-white border-[#121212]' : (variantOptionAvailable(product, 'size', size) ? 'bg-white text-gray-700 border-gray-300' : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed')" class="relative border rounded-lg px-3 py-1.5 text-sm font-bold transition"><span x-text="toEnglishNumber(size)"></span><span x-show="!variantOptionAvailable(product, 'size', size)" class="absolute inset-0 flex items-center justify-center text-red-600 text-lg font-black pointer-events-none">×</span></button>
+                                            </template>
+                                        </div>
+                                    </div>
+                                    <div x-show="productColors(product).length" class="mt-2" @click.stop>
+                                        <p class="text-xs font-bold text-gray-700 mb-1" x-text="t('chooseColor')"></p>
+                                        <div class="flex flex-wrap gap-2">
+                                            <template x-for="color in productColors(product)" :key="'card-color-' + product.id + color">
+                                                <button type="button" @click="selectVariantOption(product, 'color', color)" :disabled="!variantOptionAvailable(product, 'color', color)" :class="product.selectedColor === color ? 'bg-[#D4AF37] text-black border-[#D4AF37]' : (variantOptionAvailable(product, 'color', color) ? 'bg-white text-gray-700 border-gray-300' : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed')" class="relative border rounded-lg px-3 py-1.5 text-sm font-bold transition"><span x-text="color"></span><span x-show="!variantOptionAvailable(product, 'color', color)" class="absolute inset-0 flex items-center justify-center text-red-600 text-lg font-black pointer-events-none">×</span></button>
+                                            </template>
+                                        </div>
+                                    </div>
+                                    <span class="inline-block mt-2 text-xs font-bold px-2 py-1 rounded-full"
+                                        :class="selectedVariant(product)?.stock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
+                                        x-text="selectedVariant(product)?.stock > 0 ? t('available') : t('unavailable')"></span>
+                                    <div class="flex items-center justify-center gap-3 mt-3" @click.stop>
+                                        <button type="button" @click="changeProductQuantity(product, -1)" :disabled="selectedVariant(product)?.stock < 1 || product.selectedQuantity <= 1" class="w-8 h-8 rounded-lg bg-gray-200 text-gray-800 font-black disabled:opacity-40">−</button>
+                                        <span class="min-w-8 text-center font-black number" x-text="toEnglishNumber(product.selectedQuantity || 1)"></span>
+                                        <button type="button" @click="changeProductQuantity(product, 1)" :disabled="selectedVariant(product)?.stock < 1 || product.selectedQuantity >= selectedVariant(product)?.stock" class="w-8 h-8 rounded-lg bg-[#D4AF37] text-black font-black disabled:opacity-40">+</button>
+                                    </div>
+                                </div>
+                                <button @click.stop="addToCart(product)" :disabled="selectedVariant(product)?.stock < 1"
+                                    :class="[selectedVariant(product)?.stock > 0 ? 'bg-[#121212] hover:bg-[#D4AF37] hover:text-black' : 'bg-gray-300 text-gray-500 cursor-not-allowed', product.added ? 'cart-added-animation' : '']"
+                                    class="mt-4 w-full text-white font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-sm">
+                                    <i class="fa-solid fa-cart-plus"></i>
+                                    <span x-text="selectedVariant(product)?.stock > 0 ? (product.added ? t('added') : t('addToCart')) : t('unavailable')"></span>
+                                </button>
+                    </div>
+                </template>
+            </div>
+        </section>
+    </main>
+
+    <div x-show="selectedProduct" class="fixed inset-0 z-[55] bg-black/60 backdrop-blur-sm p-4 sm:p-8 overflow-y-auto" style="display:none" @click.self="selectedProduct = null">
+        <div class="max-w-4xl mx-auto mt-8 bg-white rounded-3xl overflow-hidden shadow-2xl" @click.stop>
+            <div class="flex justify-end p-3"><button @click="selectedProduct = null" class="text-gray-500 hover:text-black p-2 text-xl"><i class="fa-solid fa-xmark"></i></button></div>
+            <div class="grid md:grid-cols-2 gap-6 p-6 pt-0 text-right">
+                <img :src="assetUrl(selectedVariant(selectedProduct)?.image || selectedProduct?.image)" :alt="selectedProduct?.name" class="w-full aspect-square object-cover rounded-2xl bg-gray-100">
+                <div class="flex flex-col justify-center">
+                    <span class="text-sm text-gray-500" x-text="selectedProduct?.category"></span>
+                    <h2 class="text-3xl font-black mt-2" x-text="selectedProduct?.name"></h2>
+                    <p class="gold-accent text-2xl font-black my-3 number" x-text="'₪ ' + toEnglishNumber(selectedProduct?.price)"></p>
+                    <p class="text-gray-600 leading-relaxed mb-4" x-text="selectedProduct?.description"></p>
+                    <div x-show="productSizes(selectedProduct).length" class="mb-3">
+                        <p class="text-gray-700 font-bold mb-2">اختر النمرة</p>
+                        <div class="flex flex-wrap gap-2">
+                            <template x-for="size in productSizes(selectedProduct)" :key="'modal-size-' + size">
+                                <button type="button" @click="selectVariantOption(selectedProduct, 'size', size)" :disabled="!variantOptionAvailable(selectedProduct, 'size', size)" :class="selectedProduct?.selectedSize === size ? 'bg-[#121212] text-white border-[#121212]' : (variantOptionAvailable(selectedProduct, 'size', size) ? 'bg-white text-gray-700 border-gray-300' : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed')" class="relative border rounded-lg px-4 py-2 font-bold"><span x-text="toEnglishNumber(size)"></span><span x-show="!variantOptionAvailable(selectedProduct, 'size', size)" class="absolute inset-0 flex items-center justify-center text-red-600 text-xl font-black pointer-events-none">×</span></button>
+                            </template>
+                        </div>
+                    </div>
+                    <div x-show="productColors(selectedProduct).length" class="mb-3">
+                        <p class="text-gray-700 font-bold mb-2">اختر اللون</p>
+                        <div class="flex flex-wrap gap-2">
+                            <template x-for="color in productColors(selectedProduct)" :key="'modal-color-' + color">
+                                <button type="button" @click="selectVariantOption(selectedProduct, 'color', color)" :disabled="!variantOptionAvailable(selectedProduct, 'color', color)" :class="selectedProduct?.selectedColor === color ? 'bg-[#D4AF37] text-black border-[#D4AF37]' : (variantOptionAvailable(selectedProduct, 'color', color) ? 'bg-white text-gray-700 border-gray-300' : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed')" class="relative border rounded-lg px-4 py-2 font-bold"><span x-text="color"></span><span x-show="!variantOptionAvailable(selectedProduct, 'color', color)" class="absolute inset-0 flex items-center justify-center text-red-600 text-xl font-black pointer-events-none">×</span></button>
+                            </template>
+                        </div>
+                    </div>
+                    <span class="self-start text-xs font-bold px-3 py-1.5 rounded-full mb-5" :class="selectedVariant(selectedProduct)?.stock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'" x-text="selectedVariant(selectedProduct)?.stock > 0 ? t('available') : t('unavailable')"></span>
+                    <div class="flex items-center justify-center gap-4 mb-4">
+                        <button type="button" @click="changeProductQuantity(selectedProduct, -1)" :disabled="selectedVariant(selectedProduct)?.stock < 1 || selectedProduct?.selectedQuantity <= 1" class="w-10 h-10 rounded-xl bg-gray-200 text-gray-800 text-xl font-black disabled:opacity-40">−</button>
+                        <span class="min-w-10 text-center text-lg font-black number" x-text="toEnglishNumber(selectedProduct?.selectedQuantity || 1)"></span>
+                        <button type="button" @click="changeProductQuantity(selectedProduct, 1)" :disabled="selectedVariant(selectedProduct)?.stock < 1 || selectedProduct?.selectedQuantity >= selectedVariant(selectedProduct)?.stock" class="w-10 h-10 rounded-xl bg-[#D4AF37] text-black text-xl font-black disabled:opacity-40">+</button>
+                    </div>
+                    <button @click="addToCart(selectedProduct)" :disabled="selectedVariant(selectedProduct)?.stock < 1" :class="selectedVariant(selectedProduct)?.stock > 0 ? 'bg-[#121212] text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'" class="w-full py-3 rounded-xl font-bold" x-text="selectedVariant(selectedProduct)?.stock > 0 ? (selectedProduct?.added ? t('added') : t('addToCart')) : t('unavailable')"></button>
+                </div>
+            </div>
+            <div class="border-t p-6 text-right">
+                <h3 class="text-xl font-black mb-4">منتجات مشابهة</h3>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <template x-for="related in relatedProducts()" :key="related.id">
+                        <button @click="openProduct(related)" class="text-right border rounded-xl overflow-hidden hover:border-[#D4AF37] transition">
+                            <img :src="assetUrl(related.image)" :alt="related.name" loading="lazy" class="w-full aspect-square object-cover">
+                            <span class="block p-2 text-sm font-bold truncate" x-text="related.name"></span>
+                        </button>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div x-show="showDashboard" class="max-w-7xl mx-auto px-6 py-10 text-right" style="display: none;">
+        <div class="flex justify-between items-center mb-6 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+            <div>
+                <span class="bg-emerald-100 text-emerald-700 text-xs px-3 py-1 rounded-full border border-emerald-200 font-bold">لوحة التحكم الآمنة</span>
+                <h1 class="text-xl sm:text-2xl font-black mt-2 text-[#121212]">لوحة تحكم المتجر</h1>
+            </div>
+            <button @click="showDashboard = false; searchQuery=''" class="bg-gray-100 hover:bg-gray-200 text-gray-800 px-5 py-2.5 rounded-xl font-bold transition border border-gray-200">
+                العودة للمتجر
+            </button>
+        </div>
+        <div class="grid lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-3 bg-white rounded-2xl p-6 border border-[#D4AF37] shadow-sm">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-[#121212]">شعار المتجر</h3>
+                    <p class="text-sm text-gray-500 mt-1">ارفع شعارًا ليظهر بدل اسم المتجر في الترويسة.</p>
+                </div>
+                <button @click="saveLogoImages" :disabled="(!logoWصiteUpload && !logoDarkUpload) || isCompressing" class="gold-bg disabled:bg-gray-300 disabled:text-gray-500 text-black font-bold px-5 py-3 rounded-xl">حفظ الشعارين</button>
+            </div>
+            <div class="grid md:grid-cols-2 gap-5">
+                <div class="space-y-3">
+                    <div class="rounded-2xl overflow-hidden bg-[#121212] aspect-video border border-gray-200 flex items-center justify-center p-4">
+                        <img :src="assetUrl(logoWhiteUpload || logoWhite || defaultWhiteLogoPreview)" alt="معاينة الشعار الأبيض" class="max-w-full max-h-full object-contain">
+                    </div>
+                    <label class="block text-sm font-bold text-gray-700">الشعار الأبيض للوضع الداكن</label>
+                    <input type="file" @change="compressLogoImage($event, 'white')" accept="image/png,image/jpeg,image/webp,image/gif" class="w-full bg-gray-50 border border-gray-200 p-2.5 rounded-xl">
+                </div>
+                <div class="space-y-3">
+                    <div class="rounded-2xl overflow-hidden bg-white aspect-video border border-gray-200 flex items-center justify-center p-4">
+                        <img :src="assetUrl(logoDarkUpload || logoDark || defaultLogoPreview)" alt="معاينة الشعار الأسود أو الملون" class="max-w-full max-h-full object-contain">
+                    </div>
+                    <label class="block text-sm font-bold text-gray-700">الشعار الأسود أو الملون للوضع الفاتح</label>
+                    <input type="file" @change="compressLogoImage($event, 'dark')" accept="image/png,image/jpeg,image/webp,image/gif" class="w-full bg-gray-50 border border-gray-200 p-2.5 rounded-xl">
+                </div>
+            </div>
+            <p class="text-xs text-gray-500 mt-4">ارفع النسختين ليبقى الشعار واضحًا عند تبديل الثيم. يمكن حفظ كل نسخة بشكل مستقل.</p>
+        </div>
+        <div class="lg:col-span-3 bg-white rounded-2xl p-6 border border-[#D4AF37] shadow-sm">
+            <h3 class="text-lg font-bold text-[#121212]">رقم واتساب للتواصل</h3>
+            <p class="text-sm text-gray-500 mt-1 mb-4">اكتب الرقم بصيغة دولية بدون علامة +، وسيظهر رابط الدردشة في الفوتر.</p>
+            <div class="flex flex-col sm:flex-row gap-3">
+                <input type="tel" x-model="whatsappNumber" inputmode="numeric" placeholder="مثال: 970599000000" class="flex-1 bg-gray-50 border border-gray-200 p-3 rounded-xl text-left number" dir="ltr">
+                <button @click="saveWhatsappNumber" :disabled="!whatsappNumber" class="gold-bg disabled:bg-gray-300 disabled:text-gray-500 text-black font-bold px-6 py-3 rounded-xl">حفظ رقم واتساب</button>
+            </div>
+        </div>
+        <div class="lg:col-span-3 bg-white rounded-2xl p-6 border border-[#D4AF37] shadow-sm">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-[#121212]">صورة الهيرو</h3>
+                    <p class="text-sm text-gray-500 mt-1">غيّر الصورة الظاهرة أعلى المتجر ثم احفظها.</p>
+                </div>
+                <button @click="saveHeroImages" :disabled="!heroUploads.some(Boolean) || isCompressing" class="gold-bg disabled:bg-gray-300 disabled:text-gray-500 text-black font-bold px-5 py-3 rounded-xl">حفظ صور الهيرو</button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <template x-for="(upload, index) in heroUploads" :key="'hero-upload-' + index">
+                    <div class="space-y-2">
+                        <div class="rounded-2xl overflow-hidden bg-gray-100 aspect-video border border-gray-200">
+                            <img :src="assetUrl(upload || heroImages[index] || defaultHeroImage)" :alt="'معاينة صورة الهيرو ' + (index + 1)" class="w-full h-full object-cover">
+                        </div>
+                        <label class="block text-sm font-bold text-gray-700" x-text="'الصورة ' + (index + 1)"></label>
+                        <input type="file" @change="compressHeroImage($event, index)" accept="image/png,image/jpeg,image/webp,image/gif" class="w-full bg-gray-50 border border-gray-200 p-2.5 rounded-xl">
+                    </div>
+                </template>
+            </div>
+            <p class="text-xs text-gray-500 mt-4">يمكنك رفع 3 صور، وستدور تلقائيًا في الهيرو بأنميشن سلس. الصور تحفظ داخل مجلد uploads.</p>
+        </div>
+        <div class="lg:col-span-3 bg-white rounded-2xl p-6 border border-[#D4AF37] shadow-sm">
+            <div class="flex items-center justify-between gap-4 mb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-[#121212]">كتابات الصفحة الرئيسية</h3>
+                    <p class="text-sm text-gray-500 mt-1">عدّل النصوص العربية والعبرية ثم اضغط حفظ الكتابات.</p>
+                </div>
+                <button type="button" @click="saveHomepageText" class="gold-bg text-black font-bold px-5 py-3 rounded-xl">حفظ الكتابات</button>
+            </div>
+            <div class="grid md:grid-cols-2 gap-5">
+                <template x-for="languageOption in ['ar', 'he']" :key="'homepage-' + languageOption">
+                    <div class="space-y-3" :dir="languageOption === 'he' ? 'ltr' : 'rtl'">
+                        <h4 class="font-bold" x-text="languageOption === 'ar' ? 'العربية' : 'עברית'"></h4>
+                        <input x-model="homepageText[languageOption].season" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl" placeholder="النص الصغير">
+                        <input x-model="homepageText[languageOption].heroTitle" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl" placeholder="عنوان الهيرو">
+                        <input x-model="homepageText[languageOption].styleComfort" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl" placeholder="الكلمة الذهبية">
+                        <textarea x-model="homepageText[languageOption].heroDescription" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl" rows="3" placeholder="وصف الهيرو"></textarea>
+                        <input x-model="homepageText[languageOption].shopNow" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl" placeholder="زر التسوق">
+                        <input x-model="homepageText[languageOption].storeProducts" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl" placeholder="عنوان شريط المنتجات">
+                    </div>
+                </template>
+            </div>
+        </div>
+        <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+            <h3 class="text-lg font-bold mb-4 text-[#121212]">إضافة منتج للمخزون</h3>
+            <form @submit.prevent="addProduct" class="space-y-4">
+                <input type="text" x-model="newProduct.name" placeholder="اسم المنتج" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right" required>
+                <input type="text" x-model="newProduct.category" placeholder="القسم" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right" required>
+                <input type="number" x-model.number="newProduct.price" placeholder="السعر" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right" required>
+                <input type="file" @change="compressImage($event)" accept="image/*" class="w-full bg-gray-50 border border-gray-200 p-2.5 rounded-xl text-right" required>
+                <textarea x-model="newProduct.description" placeholder="الوصف" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right"></textarea>
+                <p class="text-xs text-gray-500">أضف المنتج الرئيسي أولًا، ثم استخدم «إضافة نمرة/لون» لإضافة كل فرع مع صورته وكميته.</p>
+                <button type="submit" class="w-full gold-bg text-black font-bold py-3 rounded-xl">حفظ المنتج الرئيسي</button>
+            </form>
+        </div>
+        <div class="lg:col-span-2 bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+            <h3 class="text-lg font-bold mb-4">إدارة المخزون</h3>
+            <div class="space-y-3 max-h-96 overflow-y-auto">
+                <template x-for="group in adminProductGroups()" :key="group.id">
+                    <div class="border border-gray-200 rounded-xl p-3 space-y-2">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <img :src="assetUrl(group.image)" class="w-12 h-12 object-cover rounded-lg">
+                            <span class="font-bold flex-1" x-text="'المنتج الرئيسي: ' + group.name"></span>
+                            <span class="text-xs font-bold px-2 py-1 rounded-full bg-blue-100 text-blue-700" x-text="group.variants.length + ' فرع'"></span>
+                            <button @click="startAddingVariant(group)" class="border border-[#D4AF37] text-[#8a6d12] px-3 py-2 rounded-lg text-sm font-bold">إضافة نمرة/لون</button>
+                            <button @click="startEditing(group)" class="bg-[#121212] text-white px-3 py-2 rounded-lg text-sm font-bold">تعديل الرئيسي</button>
+                            <button @click="deleteProduct(group)" class="text-red-600 p-2" title="حذف المنتج وفروعه"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                        <div class="mr-5 border-r-2 border-[#D4AF37] pr-3 space-y-2">
+                            <template x-for="variant in group.variants" :key="variant.id">
+                                <div class="flex flex-wrap items-center gap-3 text-sm">
+                                    <img :src="assetUrl(variant.image)" class="w-9 h-9 object-cover rounded-lg">
+                                    <span class="flex-1" x-text="(variant.size ? 'نمرة: ' + variant.size : 'بدون نمرة') + (variant.color ? ' - ' + variant.color : '')"></span>
+                                    <span class="number" x-text="'الكمية: ' + variant.stock"></span>
+                                    <button @click="startEditing(variant)" class="text-[#8a6d12] font-bold">تعديل الفرع</button>
+                                    <button @click="deleteProduct(variant)" class="text-red-600 p-1" title="حذف الفرع"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                            </template>
+                            <p x-show="!group.variants.length" class="text-xs text-gray-500">لم تتم إضافة فروع بعد.</p>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+        <div x-show="variantParent" class="lg:col-span-3 bg-amber-50 rounded-2xl p-6 border border-[#D4AF37] shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold">إضافة فرع للمنتج: <span x-text="variantParent?.name"></span></h3>
+                <button @click="variantParent = null" class="text-gray-500 p-2"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form @submit.prevent="addVariant" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <input type="text" x-model="newVariant.size" placeholder="النمرة / المقاس" class="border rounded-xl p-3" required maxlength="40">
+                <input type="text" x-model="newVariant.color" placeholder="اللون" class="border rounded-xl p-3" required maxlength="60">
+                <input type="number" min="0" x-model.number="newVariant.stock" placeholder="الكمية" class="border rounded-xl p-3" required>
+                <input type="file" @change="compressVariantImage($event)" accept="image/*" class="border rounded-xl p-2.5" required>
+                <button type="submit" class="gold-bg text-black font-bold py-3 rounded-xl sm:col-span-2 lg:col-span-4">حفظ الفرع</button>
+            </form>
+        </div>
+        <div x-show="editingProduct && editingProduct.id" class="lg:col-span-3 bg-white rounded-2xl p-6 border border-[#D4AF37] shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold"> تعديل المنتج</h3>
+                <button @click="editingProduct = null" class="text-gray-500 p-2"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form @submit.prevent="saveProduct" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <input type="text" x-model="editingProduct.name" placeholder="اسم المنتج" class="border rounded-xl p-3" required>
+                <input type="text" x-model="editingProduct.category" placeholder="القسم" class="border rounded-xl p-3" required>
+                <input type="number" min="0" x-model.number="editingProduct.price" placeholder="السعر" class="border rounded-xl p-3" required>
+                <input type="text" x-model="editingProduct.size" placeholder="النمرة / المقاس (مثال: 42)" class="border rounded-xl p-3" maxlength="40">
+                <input type="text" x-model="editingProduct.color" placeholder="اللون" class="border rounded-xl p-3" maxlength="60">
+                <input type="number" min="0" x-model.number="editingProduct.stock" placeholder="الكمية للمخزون" class="border rounded-xl p-3" required>
+                <input type="file" @change="compressEditImage($event)" accept="image/*" class="border rounded-xl p-2.5">
+                <textarea x-model="editingProduct.description" placeholder="الوصف" class="border rounded-xl p-3 sm:col-span-2 lg:col-span-3"></textarea>
+                <button type="submit" class="gold-bg text-black font-bold py-3 rounded-xl sm:col-span-2 lg:col-span-3">حفظ تعديلات المنتج</button>
+            </form>
+        </div>
+        <div class="lg:col-span-3 bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+            <div class="flex items-center justify-between gap-3 mb-4">
+                <h3 class="text-lg font-bold">الطلبات <span class="text-sm text-gray-500 number" x-text="'(' + toEnglishNumber(orders.length) + ')'"></span></h3>
+                <button @click="clearOrders" :disabled="!orders.length" class="text-red-600 border border-red-200 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed px-3 py-2 rounded-lg text-sm font-bold">تصفير الطلبات</button>
+            </div>
+            <div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b"><th class="p-2">العميل</th><th class="p-2">الهاتف</th><th class="p-2">الموقع</th><th class="p-2">الإجمالي</th><th class="p-2">تاريخ الطلب</th><th class="p-2">الحالة</th></tr></thead>
+                <tbody><template x-for="order in orders" :key="order.id"><tr class="border-b"><td class="p-2" x-text="order.customer_name"></td><td class="p-2 number" x-text="order.phone"></td><td class="p-2" x-text="order.location"></td><td class="p-2 number" x-text="'₪ ' + toEnglishNumber(order.total)"></td><td class="p-2 whitespace-nowrap number" dir="ltr" x-text="formatOrderDate(order.created_at)"></td><td class="p-2"><select :value="order.status" @change="updateOrderStatus(order, $event.target.value)" class="border rounded p-1"><option value="new">جديد</option><option value="confirmed">مؤكد</option><option value="shipped">تم الشحن</option><option value="cancelled">ملغى</option></select></td><td class="p-2"><button @click="deleteOrder(order)" class="text-red-600 hover:bg-red-50 rounded-lg p-2" title="حذف الطلب"><i class="fa-solid fa-trash"></i></button></td></tr></template></tbody>
+            </table></div>
+        </div>
+        </div>
+    </div>
+
+    <!-- السلة -->
+    <div x-show="cartOpen" class="fixed inset-0 z-50 overflow-hidden" style="display: none;">
+        <div @click="cartOpen = false" class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+        <div class="absolute inset-y-0 left-0 max-w-md w-full bg-white flex flex-col p-6 shadow-2xl border-r border-gray-200 text-right">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-200 pb-4">
+                <h2 class="text-xl font-bold flex items-center gap-2 text-[#121212]"><i class="fa-solid fa-cart-shopping gold-accent"></i> <span data-i18n="cart">سلة المشتريات</span></h2>
+                <button @click="cartOpen = false" class="text-gray-400 hover:text-gray-600 p-2"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="flex-1 overflow-y-auto space-y-4">
+                <template x-for="(item, index) in cart" :key="index">
+                    <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-200">
+                        <div>
+                            <span x-text="item.name" class="text-sm font-bold block text-gray-900"></span>
+                            <span x-show="item.size || item.color" class="text-xs text-gray-500 block" x-text="(item.size ? t('size') + ': ' + toEnglishNumber(item.size) : '') + (item.color ? ' - ' + t('color') + ': ' + item.color : '')"></span>
+                            <span class="gold-accent font-bold text-xs number" x-text="'₪ ' + toEnglishNumber(item.price) + ' × ' + toEnglishNumber(item.quantity)"></span>
+                            <div class="flex items-center gap-2 mt-2">
+                                <button @click="changeCartQuantity(item, -1)" :disabled="item.quantity <= 1" class="w-7 h-7 rounded-md bg-gray-200 text-gray-800 font-black disabled:opacity-40">−</button>
+                                <span class="min-w-6 text-center font-black number" x-text="toEnglishNumber(item.quantity)"></span>
+                                <button @click="changeCartQuantity(item, 1)" :disabled="item.quantity >= item.stock" class="w-7 h-7 rounded-md bg-[#D4AF37] text-black font-black disabled:opacity-40">+</button>
+                            </div>
+                        </div>
+                        <button @click="cart.splice(index, 1); persistCart()" class="text-gray-400 hover:text-rose-500 p-2"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </template>
+            </div>
+            <div class="mt-4 space-y-3 border-t border-gray-200 pt-4">
+                <div class="flex justify-between font-black"><span data-i18n="total">المجموع</span><span class="gold-accent number" x-text="'₪ ' + toEnglishNumber(cart.reduce((sum, item) => sum + item.price * item.quantity, 0))"></span></div>
+                <input type="text" x-model="customer.name" :placeholder="t('fullName')" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right" required>
+                <input type="text" x-model="customer.phone" :placeholder="t('phone')" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right" required>
+                <input type="text" x-model="customer.location" :placeholder="t('location')" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right" required>
+                <button @click="submitOrder" class="w-full gold-bg text-black font-bold py-3.5 rounded-xl" x-text="t('confirmOrder')"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- الفوتر -->
+    <footer class="bg-[#121212] text-gray-300 border-t border-gray-800 py-12 mt-20 text-center">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col items-center justify-center gap-6">
+           <div style="text-align: center; margin-top: 10px;">
+  <p style="margin: 2px 0;">كل الحقوق محفوظة 2026 © ZALLOUM STORE</p>
+  <p style="margin: 2px 0;">مدعوم ومصمم بواسطة - WATAN CREATIVE AGENCY</p>
+  <p style="font-weight: light; margin: 2px 0;">ENG.MOHAMMAD.Y.SHABANEH</p>
+</div>
+            <div class="flex items-center justify-center gap-4 text-xl">
+                <a href="https://www.tiktok.com/@zalloumsport?_r=1&_t=ZS-99of6Y3e8Hd" target="_blank" class="w-10 h-10 rounded-xl bg-[#1A1A1A] flex items-center justify-center text-gray-300 hover:bg-[#D4AF37] hover:text-black transition"><i class="fa-brands fa-tiktok"></i></a>
+                <a href="https://www.instagram.com/zalloum_sport?stkn=M3o2MXJsZ2M0anlj&utm_source=qr" target="_blank" class="w-10 h-10 rounded-xl bg-[#1A1A1A] flex items-center justify-center text-gray-300 hover:bg-[#D4AF37] hover:text-black transition"><i class="fa-brands fa-instagram"></i></a>
+                <a href="https://www.facebook.com/share/1HuhPgg3wf/?mibextid=wwXIfr" target="_blank" class="w-10 h-10 rounded-xl bg-[#1A1A1A] flex items-center justify-center text-gray-300 hover:bg-[#D4AF37] hover:text-black transition"><i class="fa-brands fa-facebook"></i></a>
+                <a x-show="whatsappNumber" :href="'https://wa.me/' + whatsappNumber" target="_blank" rel="noopener noreferrer" aria-label="الدردشة عبر واتساب" title="الدردشة عبر واتساب" class="w-10 h-10 rounded-xl bg-[#1A1A1A] flex items-center justify-center text-gray-300 hover:bg-[#25D366] hover:text-white transition"><i class="fa-brands fa-whatsapp"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        function normalizeEnglishNumbers(value) {
+            return String(value).replace(/[٠-٩۰-۹]/g, digit => {
+                const arabicIndic = '٠١٢٣٤٥٦٧٨٩';
+                const eastern = '۰۱۲۳۴۵۶۷۸۹';
+                const arabicIndex = arabicIndic.indexOf(digit);
+                return arabicIndex >= 0 ? String(arabicIndex) : String(eastern.indexOf(digit));
+            });
+        }
+
+        function normalizePageNumbers(root = document.body) {
+            const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+            const textNodes = [];
+            let node;
+            while ((node = walker.nextNode())) textNodes.push(node);
+            textNodes.forEach(textNode => {
+                const normalized = normalizeEnglishNumbers(textNode.nodeValue);
+                if (normalized !== textNode.nodeValue) textNode.nodeValue = normalized;
+            });
+            root.querySelectorAll('input, textarea, select').forEach(element => {
+                if (element.matches('input[type="file"]')) return;
+                if ('value' in element && element.value) element.value = normalizeEnglishNumbers(element.value);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            normalizePageNumbers();
+            new MutationObserver(() => normalizePageNumbers()).observe(document.body, {
+                childList: true,
+                subtree: true,
+                characterData: true
+            });
+        });
+ function storeApp() {
+    return {
+        apiUrl: (() => {
+            const localApi = 'http://127.0.0.1:5001/api';
+            if (typeof window === 'undefined') return localApi;
+            const host = window.location.hostname;
+            const protocol = window.location.protocol;
+            if (
+                protocol === 'file:' ||
+                host === '' ||
+                host === 'localhost' ||
+                host === '127.0.0.1' ||
+                host === '0.0.0.0'
+            ) return localApi;
+            return `${window.location.origin}/api`;
+        })(),
+        language: localStorage.getItem('zalloum_language') || 'ar',
+        translations: {
+            ar: {
+                all: 'الكل',
+                allProducts: 'كل المنتجات',
+                addToCart: 'أضف إلى السلة',
+                added: 'أضيفت',
+                available: 'متوفر',
+                unavailable: 'غير متوفر',
+                size: 'المقاس',
+                color: 'اللون',
+                cart: 'سلة المشتريات',
+                total: 'المجموع',
+                fullName: 'الاسم الكامل',
+                phone: 'رقم الهاتف',
+                location: 'الموقع',
+                confirmOrder: 'تأكيد الطلب',
+                search: 'بحث',
+                chooseSize: 'اختر المقاس',
+                chooseColor: 'اختر اللون',
+                product: 'منتج',
+                supportedBy: 'مدعوم ومصمم بواسطة',
+                copyright: 'كل الحقوق محفوظة 2026 © ZALLOUM STORE'
+            },
+            he: {
+                all: 'הכל',
+                allProducts: 'כל המוצרים',
+                addToCart: 'הוסף לעגלה',
+                added: 'נוסף',
+                available: 'זמין',
+                unavailable: 'לא זמין',
+                size: 'מידה',
+                color: 'צבע',
+                cart: 'עגלת הקנייה',
+                total: 'סה"כ',
+                fullName: 'שם מלא',
+                phone: 'מספר טלפון',
+                location: 'מיקום',
+                confirmOrder: 'אישור הזמנה',
+                search: 'חיפוש',
+                chooseSize: 'בחר מידה',
+                chooseColor: 'בחר צבע',
+                product: 'מוצר',
+                supportedBy: 'נתמך ועוצב על ידי',
+                copyright: 'כל הזכויות שמורות 2026 © ZALLOUM STORE'
+            }
+        },
+        searchQuery: '',
+        showDashboard: false,
+        adminLoginOpen: false,
+        loginPassword: '',
+        loginError: '',
+        cartOpen: false,
+        scrolled: false,
+        isCompressing: false,
+        lightTheme: localStorage.getItem('zalloum_light_theme') === 'true',
+        products: [],
+        adminProducts: [],
+        orders: [],
+        cart: [],
+        editingProduct: { name: '', category: '', price: '', size: '', color: '', stock: 0, image: '', description: '' },
+        selectedProduct: null,
+        variantParent: null,
+        activeCategory: 'الكل',
+        storeError: '',
+        defaultHeroImage: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600',
+        heroImages: [],
+        heroUploads: ['', '', ''],
+        heroIndex: 0,
+        defaultLogoPreview: 'https://dummyimage.com/320x100/ffffff/121212.png&text=ZALLOUM+STORE',
+        defaultWhiteLogoPreview: 'https://dummyimage.com/320x100/121212/ffffff.png&text=ZALLOUM+STORE',
+        logoWhite: '',
+        logoDark: '',
+        logoWhiteUpload: '',
+        logoDarkUpload: '',
+        whatsappNumber: '',
+        homepageText: {
+            ar: {
+                season: 'تشكيلة زلوم ستور',
+                heroTitle: 'خطوتك التالية نحو',
+                styleComfort: 'الأناقة والراحة',
+                heroDescription: 'اكتشف تصاميم الأحذية العصرية المصممة خصيصاً لتمنحك الراحة الفائقة والمظهر الاستثنائي في كل وقت.',
+                shopNow: 'تسوق التشكيلة الآن',
+                storeProducts: 'منتجات المتجر'
+            },
+            he: {
+                season: 'קולקציית זלום סטור',
+                heroTitle: 'הצעד הבא שלך אל',
+                styleComfort: 'סטייל ונוחות',
+                heroDescription: 'גלו עיצובי נעליים אופנתיים שנועדו להעניק לכם נוחות ומראה יוצא דופן בכל עת.',
+                shopNow: 'קנו את הקולקציה עכשיו',
+                storeProducts: 'מוצרי החנות'
+            }
+        },
+        customer: { name: '', phone: '', location: '' },
+        newProduct: { name: '', category: '', price: '', size: '', color: '', stock: 0, image: '', description: '' },
+        newVariant: { size: '', color: '', stock: 0, image: '' },
+
+        toggleTheme() {
+            this.lightTheme = !this.lightTheme;
+            localStorage.setItem('zalloum_light_theme', String(this.lightTheme));
+        },
+        t(key) {
+            return this.translations[this.language][key] || key;
+        },
+        assetUrl(value) {
+            if (!value || typeof value !== 'string') return value || '';
+            if (/^(data:|https?:|blob:)/i.test(value)) return value;
+            if (value.startsWith('/uploads/') || value.startsWith('/assets/')) {
+                return `${this.apiUrl.replace(/\/api\/?$/, '')}${value}`;
+            }
+            return value;
+        },
+        toggleLanguage() {
+            this.language = this.language === 'ar' ? 'he' : 'ar';
+            localStorage.setItem('zalloum_language', this.language);
+            document.documentElement.lang = this.language;
+            document.documentElement.dir = this.language === 'he' ? 'ltr' : 'rtl';
+            this.applyTranslations();
+        },
+        changeLanguage() {
+            this.toggleLanguage();
+        },
+        applyTranslations() {
+            document.querySelectorAll('[data-i18n]').forEach(element => {
+                const key = element.dataset.i18n;
+                if (this.translations[this.language][key]) element.textContent = this.t(key);
+            });
+        },
+
+                async init() {
+                    this.applyTranslations();
+                    try {
+                        const [productsResponse, settingsResponse] = await Promise.all([
+                            fetch(`${this.apiUrl}/products`),
+                            fetch(`${this.apiUrl}/store-settings`)
+                        ]);
+                        if (!productsResponse.ok || !settingsResponse.ok) throw new Error('تعذر تحميل بيانات المتجر');
+                        this.products = (await productsResponse.json()).map(product => {
+                            const initial = product.variants?.find(v => v.stock > 0) || product.variants?.[0];
+                            const available = product.variants?.some(v => Number(v.stock) > 0);
+                            product.selectedVariantId = available ? initial?.id : null;
+                            product.selectedSize = available ? (initial?.size || '') : '';
+                            product.selectedColor = available ? (initial?.color || '') : '';
+                            product.selectedQuantity = 1;
+                            return product;
+                        });
+                        const settings = await settingsResponse.json();
+                        this.heroImages = Array.isArray(settings.heroImages) ? settings.heroImages.slice(0, 3) : [];
+                        this.logoWhite = settings.logoWhite || '';
+                        this.logoDark = settings.logoDark || '';
+                        this.whatsappNumber = settings.whatsappNumber || '';
+                        if (settings.homepageText?.ar && settings.homepageText?.he) this.homepageText = settings.homepageText;
+                        window.setInterval(() => {
+                            const count = this.heroImages.length || 1;
+                            this.heroIndex = (this.heroIndex + 1) % count;
+                        }, 4500);
+                        this.restoreCart();
+                    }
+                    catch (e) {
+                        console.error(e);
+                        this.storeError = location.port === '5500' || location.port === '5501'
+                            ? 'أنت تستخدم Live Server. شغّل المتجر من http://127.0.0.1:5173 حتى تظهر المنتجات ويعمل دخول المالك.'
+                            : 'تعذر الاتصال بخادم المتجر. تأكد من تشغيل Node.js ثم أعد تحميل الصفحة.';
+                    }
+                },
+                persistCart() {
+                    localStorage.setItem('zalloum_cart', JSON.stringify(this.cart));
+                },
+                restoreCart() {
+                    try {
+                        const saved = JSON.parse(localStorage.getItem('zalloum_cart') || '[]');
+                        if (!Array.isArray(saved)) return;
+                        this.cart = saved.map(item => {
+                            const group = this.products.find(product => product.id === item.groupId || product.variants?.some(v => v.id === item.id));
+                            const variant = group?.variants?.find(v => v.id === item.id);
+                            if (!group || !variant || variant.stock < 1) return null;
+                            return { ...group, ...variant, groupId: group.id, quantity: Math.min(Math.max(Number(item.quantity) || 1, 1), variant.stock) };
+                        }).filter(Boolean);
+                        this.persistCart();
+                    } catch (_) {
+                        localStorage.removeItem('zalloum_cart');
+                    }
+                },
+                toEnglishNumber(value) {
+                    if (value === null || value === undefined || value === '') return '';
+                    return String(value).replace(/[٠-٩۰-۹]/g, digit => {
+                        const arabicIndic = '٠١٢٣٤٥٦٧٨٩';
+                        const eastern = '۰۱۲۳۴۵۶۷۸۹';
+                        const index = arabicIndic.indexOf(digit);
+                        return index >= 0 ? String(index) : String(eastern.indexOf(digit));
+                    });
+                },
+                formatOrderDate(value) {
+                    if (!value) return '—';
+                    const raw = String(value);
+                    const date = new Date(/(?:Z|[+-]\d{2}:?\d{2})$/.test(raw) ? raw : `${raw.replace(' ', 'T')}Z`);
+                    if (Number.isNaN(date.getTime())) return '—';
+                    return new Intl.DateTimeFormat('ar-EG-u-nu-latn', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                    }).format(date);
+                },
+                categories() {
+                    const unique = new Map();
+                    this.products.forEach(product => {
+                        const label = String(product.category || '').trim() || 'منتجات متنوعة';
+                        const key = label.toLocaleLowerCase('ar');
+                        if (!unique.has(key)) unique.set(key, label);
+                    });
+                    return [...unique.values()];
+                },
+                productsForCategory(category) {
+                    const key = String(category).trim().toLocaleLowerCase('ar');
+                    return this.products.filter(product =>
+                        (String(product.category || '').trim() || 'منتجات متنوعة').toLocaleLowerCase('ar') === key
+                    );
+                },
+                visibleCategories() {
+                    return this.activeCategory === 'الكل' ? this.categories() : [this.activeCategory];
+                },
+                filteredProducts() {
+                    if (this.activeCategory === 'الكل') return this.products;
+                    return this.productsForCategory(this.activeCategory);
+                },
+                uniqueCarouselProducts() {
+                    const seenImages = new Set();
+                    return this.products.filter(product => {
+                        const image = String(product.image || '').trim();
+                        if (!image || seenImages.has(image)) return false;
+                        seenImages.add(image);
+                        return true;
+                    });
+                },
+                openProduct(product) {
+                    this.selectedProduct = product;
+                },
+                relatedProducts() {
+                    if (!this.selectedProduct) return [];
+                    const category = String(this.selectedProduct.category || '').trim().toLocaleLowerCase('ar');
+                    return this.products.filter(product =>
+                        product.id !== this.selectedProduct.id &&
+                        String(product.category || '').trim().toLocaleLowerCase('ar') === category
+                    ).slice(0, 4);
+                },
+                categorySlug(category) {
+                    return String(category).trim().toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || 'general';
+                },
+                selectedVariant(product) {
+                    if (!product) return null;
+                    return product.variants?.find(v => Number(v.id) === Number(product.selectedVariantId)) || product.variants?.[0] || product;
+                },
+                changeProductQuantity(product, delta) {
+                    const stock = Number(this.selectedVariant(product)?.stock || 0);
+                    if (!stock) return;
+                    const current = Number(product.selectedQuantity) || 1;
+                    product.selectedQuantity = Math.min(stock, Math.max(1, current + delta));
+                },
+                changeCartQuantity(item, delta) {
+                    const stock = Number(item.stock || 0);
+                    item.quantity = Math.min(stock, Math.max(1, Number(item.quantity) + delta));
+                    this.persistCart();
+                },
+                productSizes(product) {
+                    return this.uniqueVariantValues(product, 'size');
+                },
+                productColors(product) {
+                    return this.uniqueVariantValues(product, 'color');
+                },
+                uniqueVariantValues(product, field) {
+                    const values = new Map();
+                    (product?.variants || []).forEach(variant => {
+                        const value = String(variant[field] || '').trim().replace(/\s+/g, ' ');
+                        if (!value) return;
+                        const key = field === 'size' ? this.toEnglishNumber(value) : value.toLocaleLowerCase('ar');
+                        if (!values.has(key)) values.set(key, value);
+                    });
+                    return [...values.values()];
+                },
+                variantOptionAvailable(product, type, value) {
+                    if (!product?.variants?.length) return false;
+                    const other = type === 'size' ? product.selectedColor : product.selectedSize;
+                    return product.variants.some(v =>
+                        v[type] === value &&
+                        (!other || v[type === 'size' ? 'color' : 'size'] === other) &&
+                        Number(v.stock) > 0
+                    );
+                },
+                selectVariantOption(product, type, value) {
+                    if (!product?.variants?.length) return;
+                    if (!this.variantOptionAvailable(product, type, value)) return;
+                    product[type === 'size' ? 'selectedSize' : 'selectedColor'] = value;
+                    let matches = product.variants.filter(v =>
+                        (!product.selectedSize || v.size === product.selectedSize) &&
+                        (!product.selectedColor || v.color === product.selectedColor)
+                    );
+                    if (!matches.length) {
+                        matches = product.variants.filter(v => type === 'size' ? v.size === value : v.color === value);
+                        const fallback = matches.find(v => v.stock > 0) || matches[0];
+                        if (type === 'size') product.selectedColor = fallback?.color || '';
+                        else product.selectedSize = fallback?.size || '';
+                        matches = fallback ? [fallback] : [];
+                    }
+                    const preferred = matches.find(v => v.stock > 0) || matches[0];
+                    product.selectedVariantId = preferred?.id || null;
+                    product.selectedQuantity = Math.min(
+                        Math.max(Number(product.selectedQuantity) || 1, 1),
+                        Number(preferred?.stock || 1)
+                    );
+                },
+                adminProductGroups() {
+                    const groups = new Map();
+                    this.adminProducts.forEach(product => {
+                        const parent = product.parent_id
+                            ? this.adminProducts.find(item => item.id === product.parent_id)
+                            : product;
+                        if (!parent) return;
+                        if (!groups.has(parent.id)) groups.set(parent.id, { ...parent, variants: [] });
+                        if (product.id !== parent.id) groups.get(parent.id).variants.push(product);
+                    });
+                    return [...groups.values()];
+                },
+
+                async tryHiddenDashboard() {
+                    if (!this.searchQuery.trim()) return;
+                    this.loginPassword = this.searchQuery;
+                    this.searchQuery = '';
+                    await this.login();
+                },
+                async login() {
+                    this.loginError = '';
+                    let response;
+                    try {
+                        response = await fetch(`${this.apiUrl}/admin/login`, { method: 'POST', credentials: 'include', headers: {'Content-Type':'application/json'}, body: JSON.stringify({password: this.loginPassword}) });
+                    } catch (_) {
+                        this.loginError = 'الخادم غير متصل. افتح المتجر من http://127.0.0.1:5173 وليس Live Server.';
+                        return;
+                    }
+                    if (!response.ok) {
+                        this.loginError = response.status === 429
+                            ? 'تم إيقاف المحاولات مؤقتًا. انتظر قليلًا ثم حاول مرة أخرى.'
+                            : 'كلمة المرور غير صحيحة';
+                        return;
+                    }
+                    this.showDashboard = true; this.cartOpen = false; this.adminLoginOpen = false; this.loginPassword = '';
+                    await this.loadAdminData();
+                },
+                async loadAdminData() {
+                    const requestOptions = { credentials: 'include' };
+                    const [ordersResponse, productsResponse] = await Promise.all([
+                        fetch(`${this.apiUrl}/admin/orders`, requestOptions),
+                        fetch(`${this.apiUrl}/admin/products`, requestOptions)
+                    ]);
+                    if (!ordersResponse.ok || !productsResponse.ok) {
+                        if (ordersResponse.status === 401 || productsResponse.status === 401) {
+                            this.showDashboard = false;
+                            this.loginError = 'انتهت جلسة الدخول. سجّل الدخول مرة أخرى.';
+                        }
+                        return;
+                    }
+                    this.orders = await ordersResponse.json();
+                    this.adminProducts = await productsResponse.json();
+                },
+
+                compressImage(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    
+                    this.isCompressing = true;
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.src = e.target.result;
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = 400; 
+                            canvas.height = 400;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, 400, 400);
+                            this.newProduct.image = canvas.toDataURL('image/jpeg', 0.7);
+                            this.isCompressing = false;
+                        };
+                    };
+                },
+
+                compressVariantImage(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    this.isCompressing = true;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = 400; canvas.height = 400;
+                            canvas.getContext('2d').drawImage(img, 0, 0, 400, 400);
+                            this.newVariant.image = canvas.toDataURL('image/jpeg', 0.7);
+                            this.isCompressing = false;
+                        };
+                        img.onerror = () => { this.isCompressing = false; alert('تعذر قراءة الصورة'); };
+                        img.src = e.target.result;
+                    };
+                    reader.onerror = () => { this.isCompressing = false; alert('تعذر تحميل الصورة'); };
+                    reader.readAsDataURL(file);
+                },
+
+                compressHeroImage(event, index) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    this.isCompressing = true;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const maxSize = 1000;
+                            const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+                            canvas.width = Math.max(1, Math.round(img.width * scale));
+                            canvas.height = Math.max(1, Math.round(img.height * scale));
+                            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                            this.heroUploads[index] = canvas.toDataURL('image/jpeg', 0.8);
+                            this.isCompressing = false;
+                        };
+                        img.onerror = () => { this.isCompressing = false; alert('تعذر قراءة الصورة'); };
+                        img.src = e.target.result;
+                    };
+                    reader.onerror = () => { this.isCompressing = false; alert('تعذر تحميل الصورة'); };
+                    reader.readAsDataURL(file);
+                },
+
+                activeLogoImage() {
+                    return this.lightTheme ? this.logoDark : this.logoWhite;
+                },
+
+                compressLogoImage(event, variant) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    this.isCompressing = true;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const maxWidth = 900;
+                            const scale = Math.min(1, maxWidth / img.width);
+                            canvas.width = Math.max(1, Math.round(img.width * scale));
+                            canvas.height = Math.max(1, Math.round(img.height * scale));
+                            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                            if (variant === 'white') this.logoWhiteUpload = canvas.toDataURL('image/png');
+                            else this.logoDarkUpload = canvas.toDataURL('image/png');
+                            this.isCompressing = false;
+                        };
+                        img.onerror = () => { this.isCompressing = false; alert('تعذر قراءة الشعار'); };
+                        img.src = e.target.result;
+                    };
+                    reader.onerror = () => { this.isCompressing = false; alert('تعذر تحميل الشعار'); };
+                    reader.readAsDataURL(file);
+                },
+
+                async saveLogoImages() {
+                    if (!this.logoWhiteUpload && !this.logoDarkUpload) return;
+                    const response = await fetch(`${this.apiUrl}/admin/store-settings/logo`, {
+                        method: 'PUT',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            whiteImage: this.logoWhiteUpload || undefined,
+                            darkImage: this.logoDarkUpload || undefined
+                        })
+                    });
+                    const data = await response.json().catch(() => ({}));
+                    if (!response.ok) {
+                        alert(data.error || 'تعذر حفظ الشعارين');
+                        return;
+                    }
+                    if (data.logoWhite) this.logoWhite = data.logoWhite;
+                    if (data.logoDark) this.logoDark = data.logoDark;
+                    this.logoWhiteUpload = '';
+                    this.logoDarkUpload = '';
+                    alert('تم حفظ الشعار');
+                },
+
+                async saveWhatsappNumber() {
+                    const number = this.toEnglishNumber(this.whatsappNumber).replace(/\D/g, '');
+                    const response = await fetch(`${this.apiUrl}/admin/store-settings/whatsapp`, {
+                        method: 'PUT',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ number })
+                    });
+                    const data = await response.json().catch(() => ({}));
+                    if (!response.ok) {
+                        alert(data.error || 'تعذر حفظ رقم واتساب');
+                        return;
+                    }
+                    this.whatsappNumber = data.whatsappNumber;
+                    alert('تم حفظ رقم واتساب');
+                },
+
+                async saveHeroImages() {
+                    const images = this.heroUploads.map((upload, index) => upload || this.heroImages[index]).filter(Boolean).slice(0, 3);
+                    if (!images.length) return;
+                    const response = await fetch(`${this.apiUrl}/admin/store-settings/hero`, {
+                        method: 'PUT',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ images })
+                    });
+                    const data = await response.json().catch(() => ({}));
+                    if (!response.ok) {
+                        alert(data.error || 'تعذر حفظ صور الهيرو');
+                        return;
+                    }
+                    this.heroImages = data.heroImages || images;
+                    this.heroUploads = ['', '', ''];
+                    this.heroIndex = 0;
+                    alert('تم حفظ صور الهيرو');
+                },
+                async saveHomepageText() {
+                    try {
+                        const response = await fetch(`${this.apiUrl}/admin/store-settings/homepage`, {
+                            method: 'PUT',
+                            credentials: 'include',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ content: this.homepageText })
+                        });
+                        const data = await response.json().catch(() => ({}));
+                        if (!response.ok) {
+                            alert(data.error || 'تعذر حفظ كتابات الصفحة');
+                            return;
+                        }
+                        this.homepageText = data.homepageText;
+                        alert('تم حفظ كتابات الصفحة الرئيسية');
+                    } catch (_) {
+                        alert('تعذر الاتصال بالخادم لحفظ الكتابات');
+                    }
+                },
+
+                startEditing(product) {
+                    this.editingProduct = { ...product };
+                    this.$nextTick(() => document.querySelector('[x-show="editingProduct"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+                },
+
+                compressEditImage(event) {
+                    const file = event.target.files[0];
+                    if (!file || !this.editingProduct) return;
+                    this.isCompressing = true;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = 400; canvas.height = 400;
+                            canvas.getContext('2d').drawImage(img, 0, 0, 400, 400);
+                            this.editingProduct.image = canvas.toDataURL('image/jpeg', 0.7);
+                            this.isCompressing = false;
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                },
+
+                addToCart(product) {
+                    const variant = this.selectedVariant(product);
+                    if (!variant?.stock) return;
+                    const requestedQuantity = Math.min(
+                        Math.max(Number(product.selectedQuantity) || 1, 1),
+                        Number(variant.stock)
+                    );
+                    const existing = this.cart.find(item => item.id === variant.id);
+                    if (existing) {
+                        if (existing.quantity >= variant.stock) return;
+                        existing.quantity = Math.min(variant.stock, existing.quantity + requestedQuantity);
+                    } else this.cart.push({...product, ...variant, groupId: product.id, quantity: requestedQuantity});
+                    product.added = true;
+                    this.persistCart();
+                    clearTimeout(product.addedTimer);
+                    product.addedTimer = setTimeout(() => { product.added = false; }, 1600);
+                },
+
+                startAddingVariant(product) {
+                    this.variantParent = product;
+                    this.newVariant = { size: '', color: '', stock: 0, image: '' };
+                },
+
+                async addVariant() {
+                    if (this.isCompressing || !this.variantParent || !this.newVariant.image) {
+                        alert('اختر صورة الفرع وانتظر انتهاء معالجتها');
+                        return;
+                    }
+                    const response = await fetch(`${this.apiUrl}/admin/products/${this.variantParent.id}/variants`, {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.newVariant)
+                    });
+                    const data = await response.json().catch(() => ({}));
+                    if (!response.ok) {
+                        alert(data.error || 'تعذر حفظ الفرع');
+                        return;
+                    }
+                    alert('تمت إضافة النمرة واللون والصورة');
+                    this.variantParent = null;
+                    this.newVariant = { size: '', color: '', stock: 0, image: '' };
+                    await this.loadAdminData();
+                },
+
+                async submitOrder() {
+                    if(!this.cart.length || !this.customer.name || !this.customer.phone || !this.customer.location) return alert('أدخل الاسم والموقع ورقم الهاتف');
+                    const whatsappWindow = window.open('about:blank', '_blank');
+                    try {
+                        const response = await fetch(`${this.apiUrl}/checkout`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ customerName: this.customer.name, phone: this.toEnglishNumber(this.customer.phone).trim(), location: this.customer.location, cart: this.cart.map(i => ({id:i.id, quantity:i.quantity})) })
+                        });
+                        const data = await response.json();
+                        if (!response.ok) throw new Error(data.error || 'تعذر تأكيد الطلب');
+                        if (data.whatsappUrl) {
+                            if (whatsappWindow) {
+                                whatsappWindow.location.href = data.whatsappUrl;
+                            } else {
+                                window.open(data.whatsappUrl, '_blank', 'noopener,noreferrer');
+                            }
+                        } else if (whatsappWindow) {
+                            whatsappWindow.close();
+                        }
+                        this.cart = []; this.persistCart(); this.cartOpen = false; this.customer = { name: '', phone: '', location: '' }; await this.init();
+                    } catch(err) {
+                        if (whatsappWindow) whatsappWindow.close();
+                        alert(err.message);
+                    }
+                },
+
+                async addProduct() {
+                    if (this.isCompressing) {
+                        alert('الرجاء الانتظار قليلاً ريثما تنتهي معالجة الصورة..');
+                        return;
+                    }
+                    if (!this.newProduct.image) {
+                        alert('الرجاء اختيار صورة للمنتج أولاً');
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(`${this.apiUrl}/admin/products`, {
+                            method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.newProduct)
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            alert('تم حفظ المنتج بنجاح في قاعدة البيانات!');
+                            this.newProduct = { name: '', category: '', price: '', size: '', color: '', stock: 0, image: '', description: '' };
+                            const fileInput = document.querySelector('input[type="file"]');
+                            if(fileInput) fileInput.value = '';
+                            await this.loadAdminData();
+                        } else {
+                            alert('خطأ في الحفظ: ' + (data.error || 'غير مصرح'));
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        alert('تعذر الاتصال بالخادم');
+                    }
+                },
+                async saveProduct() {
+                    if (this.isCompressing || !this.editingProduct?.image) {
+                        alert('الرجاء الانتظار حتى تنتهي معالجة الصورة');
+                        return;
+                    }
+                    const response = await fetch(`${this.apiUrl}/admin/products/${this.editingProduct.id}`, {
+                        method: 'PUT',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.editingProduct)
+                    });
+                    const data = await response.json();
+                    if (!response.ok) {
+                        alert(data.error || 'تعذر حفظ التعديلات');
+                        return;
+                    }
+                    const index = this.adminProducts.findIndex(product => product.id === this.editingProduct.id);
+                    if (index >= 0) this.adminProducts[index] = { ...this.editingProduct };
+         this.editingProduct = null;
+                    alert('تم حفظ تعديلات المنتج');
+                },
+                async updateStock(product, stock) {
+                    const response = await fetch(`${this.apiUrl}/admin/products/${product.id}/stock`, { method:'PATCH', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({stock:Number(stock)}) });
+                    if (response.ok) product.stock = Number(stock); else alert('تعذر تعديل المخزون');
+                },
+                async deleteProduct(product) {
+                    if (!confirm('حذف هذا المنتج؟')) return;
+                    const response = await fetch(`${this.apiUrl}/admin/products/${product.id}`, {method:'DELETE', credentials:'include'});
+                    if (response.ok) this.adminProducts = this.adminProducts.filter(item => item.id !== product.id); else alert('تعذر حذف المنتج');
+                },
+                async updateOrderStatus(order, status) {
+                    const response = await fetch(`${this.apiUrl}/admin/orders/${order.id}`, {method:'PATCH', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status})});
+                    if (response.ok) order.status = status; else alert('تعذر تحديث حالة الطلب');
+                },
+                async deleteOrder(order) {
+                    if (!confirm(`حذف الطلب #${order.id} نهائيًا؟`)) return;
+                    const response = await fetch(`${this.apiUrl}/admin/orders/${order.id}`, { method: 'DELETE', credentials:'include' });
+                    const data = await response.json();
+                    if (!response.ok) {
+                        alert(data.error || 'تعذر حذف الطلب');
+                        return;
+                    }
+                    this.orders = this.orders.filter(item => item.id !== order.id);
+                }
+            }
+        }
+        window.loginOwnerFromSearch = async function (event) {
+            if (event.key !== 'Enter') return;
+            event.target.setCustomValidity('');
+            const password = event.target.value.trim();
+            if (!password) return;
+            try {
+                const response = await fetch(`${this.apiUrl}/admin/login`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+                event.target.value = '';
+                if (response.ok) {
+                    document.querySelector('main').style.display = 'none';
+                    const dashboard = document.querySelector('[x-show="showDashboard"]');
+                    if (dashboard) dashboard.style.display = 'block';
+                    if (window.Alpine) {
+                        const app = window.Alpine.$data(document.body);
+                        app.showDashboard = true;
+                        app.cartOpen = false;
+                    }
+                } else {
+                    event.target.setCustomValidity(
+                        response.status === 429
+                            ? 'تم إيقاف المحاولات مؤقتًا. انتظر قليلًا ثم حاول مرة أخرى.'
+                            : 'رمز المالك غير صحيح'
+                    );
+                    event.target.reportValidity();
+                }
+            } catch (err) {
+                event.target.setCustomValidity('تعذر الاتصال بالخادم');
+                event.target.reportValidity();
+            }
+        };
+
+        // دالة تصفير الطلبات الملحقة
+        storeApp.prototype.clearOrders = async function() {
+            if (!confirm('سيتم حذف جميع الطلبات وتصفير ترقيمها. هل تريد المتابعة؟')) return;
+            try {
+                const response = await fetch(`${this.apiUrl}/admin/orders`, { method: 'DELETE', credentials: 'include' });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    alert(data.error || 'تعذر تصفير الطلبات');
+                    return;
+                }
+                await this.loadAdminData();
+                alert('تم تصفير الطلبات بنجاح');
+            } catch (_) {
+                alert('تعذر الاتصال بالخادم لتصفير الطلبات');
+            }
+        };
+    </script>
+</body>
+</html>
