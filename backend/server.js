@@ -15,7 +15,7 @@ fs.mkdirSync(DATA_DIR, { recursive: true });
 const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 
 // تفعيل مجلدات الملفات الثابتة (Assets & Uploads) للوصول العام وإصلاح مشكلة الـ 403 للخطوط
-app.use('/assets', express.static(path.join(__dirname, 'assets')));
+app.use('/assets/fonts', express.static(path.join(__dirname, 'assets')));
 app.use('/uploads', express.static(UPLOADS_DIR));
 
 const DEV_ORIGINS = new Set([
