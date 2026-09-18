@@ -522,7 +522,6 @@
             <div class="grid md:grid-cols-2 gap-5">
                 <div class="space-y-3">
                     <div class="rounded-2xl overflow-hidden bg-[#121212] aspect-video border border-gray-200 flex items-center justify-center p-4">
-                        <img :src="assetUrl(logoWhiteUpload || logoWhite || defaultWhiteLogoPreview)" alt="معاينة الشعار الأبيض" class="max-w-full max-h-full object-contain">
                     </div>
                     <label class="block text-sm font-bold text-gray-700">الشعار الأبيض للوضع الداكن</label>
                     <input type="file" @change="compressLogoImage($event, 'white')" accept="image/png,image/jpeg,image/webp,image/gif" class="w-full bg-gray-50 border border-gray-200 p-2.5 rounded-xl">
@@ -846,7 +845,6 @@
         defaultWhiteLogoPreview: 'https://dummyimage.com/320x100/121212/ffffff.png&text=ZALLOUM+STORE',
         logoWhite: '',
         logoDark: '',
-        logoWhiteUpload: '',
         logoDarkUpload: '',
         whatsappNumber: '',
         homepageText: {
@@ -1226,7 +1224,7 @@
                             canvas.width = Math.max(1, Math.round(img.width * scale));
                             canvas.height = Math.max(1, Math.round(img.height * scale));
                             canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-                            if (variant === 'white') logoWhiteUpload = canvas.toDataURL('image/png');
+                            if (variant === 'white') this.logoWhiteUpload = canvas.toDataURL('image/png');
                             else this.logoDarkUpload = canvas.toDataURL('image/png');
                             this.isCompressing = false;
                         };
@@ -1238,13 +1236,12 @@
                 },
 
                 async saveLogoImages() {
-                    if (!logoWhiteUpload && !this.logoDarkUpload) return;
+                    if (logoDarkUpload) return;
                     const response = await fetch(`${this.apiUrl}/admin/store-settings/logo`, {
                         method: 'PUT',
                         credentials: 'include',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            whiteImage: logoWhiteUpload || undefined,
                             darkImage: logoDarkUpload || undefined
                         })
                     });
@@ -1255,7 +1252,6 @@
                     }
                     if (data.logoWhite) this.logoWhite = data.logoWhite;
                     if (data.logoDark) this.logoDark = data.logoDark;
-                    logoWhiteUpload = '';
                     logoDarkUpload = '';
                     alert('تم حفظ الشعار');
                 },
