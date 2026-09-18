@@ -7,28 +7,19 @@ const crypto = require('crypto');
 const fs = require('fs');
 const compression = require('compression');
 
-// 1. تعريف تطبيق express أولاً لتفادي خطأ ReferenceError نهائياً
 const app = express();
-
 const PORT = Number(process.env.PORT) || 5001;
-
-// 2. إعداد مسارات التخزين داخل مجلد السيرفر مباشرة لتفادي قيود الصلاحيات
-const DATA_DIR = __dirname; 
+const DATA_DIR = process.env.NODE_ENV === 'production' ? '/var/data' : (process.env.DATA_DIR || __dirname);
 const DB_PATH = path.join(DATA_DIR, 'store.db');
-const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 
-console.log(`[Database Control] Active database path: ${DB_PATH}`);
-
-// إنشاء مجلد الرفع محلياً
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
-// 3. تفعيل مسارات المجلدات الثابتة بشكل صحيح بعد أن تم تعريف app بنجاح
 app.use('/assets/fonts', express.static(path.join(__dirname, 'assets')));
 app.use('/uploads', express.static(UPLOADS_DIR));
 
-// 4. إعداد قائمة النطاقات المسموح لها بالاتصال (CORS & CSP) بشكل كامل وصحيح
 const DEV_ORIGINS = new Set([
   'http://127.0.0.1:5173',
   'http://localhost:5173',
@@ -41,24 +32,27 @@ const DEV_ORIGINS = new Set([
   'https://onrender.com',
   'https://onrender.com'
 ]);
-// 5. حماية إضافية لنسخ الملفات الابتدائية
-if (DATA_DIR !== __dirname) {
-  if (!fs.existsSync(DB_PATH) && fs.existsSync(path.join(__dirname, 'store.db'))) {
-    try {
-      fs.copyFileSync(path.join(__dirname, 'store.db'), DB_PATH);
-    } catch (e) {
-      console.log('[Database Control] Initial local db copy skipped.');
-    }
-  }
+
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'zalloum2003';
+const COOKIE_SECURE = process.env.COOKIE_SECURE === 'true';
+const WHATSAPP_ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN;
+const WHATSAPP_PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
+const WHATSAPP_RECIPIENT_NUMBER = process.env.WHATSAPP_RECIPIENT_NUMBER;
+const SESSION_TTL = 8 * 60 * 60 * 1000;
+const MAX_IMAGE_LENGTH = 5 * 1024 * 1024;
+const sessions = new Map();
+const rateLimits = new Map();
+
+// استدعاء مكتبة Supabase السحابية وتجهيز عميل الاتصال بأمان
+const { createClient } = require('@supabase/supabase-js');
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  throw new Error('مفاتيح ربط قاعدة البيانات السحابية SUPABASE_URL و SUPABASE_KEY غير معرفة في إعدادات Render!');
 }
 
-// 6. تشغيل قاعدة البيانات بشكل رسمي
-const db = new Database(DB_PATH);
-
-if (!ADMIN_PASSWORD) throw new Error('ADMIN_PASSWORD must be configured before starting the server');
-if (!WHATSAPP_ACCESS_TOKEN || !WHATSAPP_PHONE_NUMBER_ID || !WHATSAPP_RECIPIENT_NUMBER) {
-  console.warn('WhatsApp Cloud API is not configured; orders will be saved but no message will be sent.');
-}
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 app.get('/healthz', (req, res) => res.json({ ok: true }));
 
@@ -87,6 +81,7 @@ app.use((req, res, next) => {
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
 });
+
 app.use(express.json({ limit: '8mb', strict: true }));
 
 function limited(key, max, windowMs) {
@@ -96,20 +91,37 @@ function limited(key, max, windowMs) {
   entry.count += 1;
   return entry.count <= max;
 }
+
 function clientKey(req) { return req.ip || req.socket.remoteAddress || 'unknown'; }
-function query(sql, params = []) {
-  const stmt = db.prepare(sql);
-  return Promise.resolve(stmt.all(...(Array.isArray(params) ? params : [params])));
+
+// تحويل دالة جلب البيانات لتتصل بـ Supabase بدلاً من الملف المحلي
+async function query(sql, params = []) {
+  const { data, error } = await supabase.rpc('execute_sql_query', { query_text: sql, query_params: params });
+  if (error) {
+    console.error('[Supabase Query Error]:', error.message);
+    throw error;
+  }
+  return data || [];
 }
-function run(sql, params = []) {
-  const stmt = db.prepare(sql);
-  const info = stmt.run(...(Array.isArray(params) ? params : [params]));
-  return Promise.resolve({ lastID: info.lastInsertRowid, changes: info.changes });
+
+// تحويل دالة الإدخال والتعديل لتتصل بـ Supabase
+async function run(sql, params = []) {
+  const { data, error } = await supabase.rpc('execute_sql_run', { query_text: sql, query_params: params });
+  if (error) {
+    console.error('[Supabase Run Error]:', error.message);
+    throw error;
+  }
+  return { 
+    lastID: data ? data.lastInsertRowid : null, 
+    changes: data ? data.changes : 0 
+  };
 }
+
 function cookieToken(req) {
   const match = (req.get('cookie') || '').match(/(?:^|;\s*)admin_session=([^;]+)/);
   return match && match[1];
 }
+
 function adminOnly(req, res, next) {
   const token = cookieToken(req);
   const session = token && sessions.get(token);
