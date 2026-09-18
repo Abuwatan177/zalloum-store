@@ -49,14 +49,24 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'zalloum2003';
 const COOKIE_SECURE = process.env.COOKIE_SECURE === 'true';
 const WHATSAPP_ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN;
 const WHATSAPP_PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
+// حماية السيرفر من الانهيار إذا لم تكن قاعدة البيانات الابتدائية موجودة
 if (DATA_DIR !== __dirname) {
   if (!fs.existsSync(DB_PATH) && fs.existsSync(path.join(__dirname, 'store.db'))) {
-    fs.copyFileSync(path.join(__dirname, 'store.db'), DB_PATH);
+    try {
+      fs.copyFileSync(path.join(__dirname, 'store.db'), DB_PATH);
+    } catch (e) {
+      console.log('[Database Control] No initial local db found, skipping copy.');
+    }
   }
   if (!fs.existsSync(UPLOADS_DIR) && fs.existsSync(path.join(__dirname, 'uploads'))) {
-    fs.cpSync(path.join(__dirname, 'uploads'), UPLOADS_DIR, { recursive: true });
+    try {
+      fs.cpSync(path.join(__dirname, 'uploads'), UPLOADS_DIR, { recursive: true });
+    } catch (e) {
+      console.log('[Database Control] No initial uploads directory found, skipping copy.');
+    }
   }
 }
+
 const db = new Database(DB_PATH);
 if (!ADMIN_PASSWORD) throw new Error('ADMIN_PASSWORD must be configured before starting the server');
 if (!WHATSAPP_ACCESS_TOKEN || !WHATSAPP_PHONE_NUMBER_ID || !WHATSAPP_RECIPIENT_NUMBER) {
