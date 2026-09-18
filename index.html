@@ -907,7 +907,7 @@
                     try {
                         const [productsResponse, settingsResponse] = await Promise.all([
                             fetch(`${this.apiUrl}/products`),
-                            fetch(`${this.apiUrl}/store-settings`)
+                            fetch(`${this.apiUrl}//healthz`)
                         ]);
                         if (!productsResponse.ok || !settingsResponse.ok) throw new Error('تعذر تحميل بيانات المتجر');
                         this.products = (await productsResponse.json()).map(product => {
