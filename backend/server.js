@@ -8,31 +8,23 @@ const fs = require('fs');
 const compression = require('compression');
 
 // 1. تعريف تطبيق express أولاً لتفادي خطأ ReferenceError نهائياً
-const app = express();
-
 const PORT = Number(process.env.PORT) || 5001;
-const DATA_DIR = process.env.NODE_ENV === 'production' ? '/var/data' : (process.env.DATA_DIR || __dirname);
 
-// 2. التأكد برمجياً من إنشاء المجلد الدائم قبل استدعاء قاعدة البيانات
-try {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-} catch (err) {
-  console.error('[Database Control] Failed to create DATA_DIR:', err.message);
-}
-
+// جعل قاعدة البيانات والمجلدات تعمل محلياً داخل السيرفر لتخطي قيود ريندر تماماً
+const DATA_DIR = __dirname; 
 const DB_PATH = path.join(DATA_DIR, 'store.db');
+const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
+
 console.log(`[Database Control] Active database path: ${DB_PATH}`);
 
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
-try {
-  if (!fs.existsSync(UPLOADS_DIR)) {
-    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-  }
-} catch (err) {
-  console.log('[Uploads Control] Local uploads dir creation skipped.');
+// إنشاء المجلدات محلياً بشكل آمن
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
+
+// تفعيل مسارات المجلدات الثابتة
+app.use('/assets/fonts', express.static(path.join(__dirname, 'assets')));
+app.use('/uploads', express.static(UPLOADS_DIR));
 
 // 3. تفعيل مسارات المجلدات الثابتة بشكل صحيح بعد أن تم تعريف app بنجاح
 app.use('/assets/fonts', express.static(path.join(__dirname, 'assets')));
