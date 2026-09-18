@@ -517,7 +517,6 @@
                     <h3 class="text-lg font-bold text-[#121212]">شعار المتجر</h3>
                     <p class="text-sm text-gray-500 mt-1">ارفع شعارًا ليظهر بدل اسم المتجر في الترويسة.</p>
                 </div>
-              <button @click="saveLogoInages" :disabled="isCompressing" class="...">
             </div>
             <div class="grid md:grid-cols-2 gap-5">
                 <div class="space-y-3">
@@ -1496,7 +1495,7 @@
             const password = event.target.value.trim();
             if (!password) return;
             try {
-                const response = await fetch(`${this.apiUrl}/admin/login`, {
+const response = await fetch('/api/admin/login', {
                     method: 'POST',
                     credentials: 'include',
                     headers: { 'Content-Type': 'application/json' },
@@ -1530,7 +1529,7 @@
         storeApp.prototype.clearOrders = async function() {
             if (!confirm('سيتم حذف جميع الطلبات وتصفير ترقيمها. هل تريد المتابعة؟')) return;
             try {
-                const response = await fetch(`${this.apiUrl}/admin/orders`, { method: 'DELETE', credentials: 'include' });
+const response = await fetch('/api/admin/orders/clear', { method: 'DELETE', credentials: 'include' });
                 const data = await response.json().catch(() => ({}));
                 if (!response.ok) {
                     alert(data.error || 'تعذر تصفير الطلبات');

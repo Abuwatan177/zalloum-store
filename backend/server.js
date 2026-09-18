@@ -432,14 +432,18 @@ app.patch('/api/admin/products/:id/stock', adminOnly, async (req, res) => {
   } catch (_) { res.status(500).json({ error: 'Unable to update stock' }); }
 });
 
-app.delete('/api/admin/products/:id', adminOnly, async (req, res) => {
-  if (!idParam(req.params.id)) return res.status(400).json({ error: 'Invalid product id' });
+app.delete('/api/admin/orders/clear', adminOnly, async (req, res) => {
   try {
-    const result = await run('DELETE FROM products WHERE id=? OR parent_id=?', [Number(req.params.id), Number(req.params.id)]);
-    if (!result.changes) return res.status(404).json({ error: 'Product not found' });
-    res.json({ success: true });
-  } catch (_) { res.status(500).json({ error: 'Unable to delete product' }); }
+    db.prepare('DELETE FROM order_items').run();
+    db.prepare('DELETE FROM orders').run();
+    
+    res.json({ success: true, message: 'تم تصفير جميع الطلبات بنجاح' });
+  } catch (error) {
+    console.error('Error clearing orders:', error.message);
+    res.status(500).json({ error: 'حدث خطأ أثناء محاولة تصفير الطلبات' });
+  }
 });
+
 
 app.get('/api/admin/orders', adminOnly, async (req, res) => {
   try { res.json(await query('SELECT id,customer_name,phone,location,total,status,created_at FROM orders ORDER BY id DESC')); }
