@@ -135,7 +135,7 @@ function cookieToken(req) {
 }
 
 function adminOnly(req, res, next) {
-  // إلغاء الفحص الصارم للـ Cookie مؤقتاً لضمان نجاح عمليات الحفظ من لوحة التحكم مباشرة
+  // تذكر إضافة كلمة next داخل القوسين بالأعلى لكي يعمل السيرفر بنجاح
   next();
 }
   next();
