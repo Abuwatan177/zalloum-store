@@ -30,7 +30,7 @@ const DEV_ORIGINS = new Set([
   `http://127.0.0.1:${PORT}`,
   `http://localhost:${PORT}`,
   'https://onrender.com',
-  'https://onrender.com'
+  'https://zalloum-store-j6mz.onrender.com'
 ]);
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'zalloum2003';
