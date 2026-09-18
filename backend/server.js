@@ -105,7 +105,6 @@ async function query(sql, params = []) {
 }
 
 // تحويل دالة الإدخال والتعديل لتتصل بـ Supabase
-// تحويل دالة الإدخال والتعديل لتتوافق تماماً مع أسماء المتغيرات في كود المتجر و سوبابيس
 async function run(sql, params = []) {
   try {
     const { data, error } = await supabase.rpc('execute_sql_run', { 
