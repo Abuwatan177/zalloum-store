@@ -8,14 +8,17 @@ const crypto = require('crypto');
 const fs = require('fs');
 const PORT = Number(process.env.PORT) || 5001;
 
-// إجبار السيرفر على استخدام قرص التخزين الدائم لـ Render في بيئة الإنتاج
 const DATA_DIR = process.env.NODE_ENV === 'production' ? '/var/data' : (process.env.DATA_DIR || __dirname);
 const DB_PATH = path.join(DATA_DIR, 'store.db');
 
-// طباعة مسار قاعدة البيانات للتأكد في الكونسول
 console.log(`[Database Control] Active database path: ${DB_PATH}`);
-fs.mkdirSync(DATA_DIR, { recursive: true });
+
+if (process.env.NODE_ENV !== 'production') {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
 const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
+fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
 // تفعيل مجلدات الملفات الثابتة (Assets & Uploads) للوصول العام وإصلاح مشكلة الـ 403 للخطوط
 app.use('/assets/fonts', express.static(path.join(__dirname, 'assets')));
