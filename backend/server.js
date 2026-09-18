@@ -559,5 +559,13 @@ app.post('/api/checkout', async (req, res) => {
     res.status(status).json({ error: err.code === 'OUT_OF_STOCK' ? 'Insufficient stock' : err.message.startsWith('WhatsApp API error') ? 'Unable to send WhatsApp notification' : 'Unable to place order' });
   }
 });
+// 1. جعل المجلد الذي يحتوي على ملفات الواجهة جاهزاً للاستخدام (تأكد من استبدال 'dist' بمجلد البناء الخاص بك)
+app.use(express.static(path.join(__dirname, 'dist')));
+
+// 2. توجيه أي مسار غير معرّف إلى ملف index.html الخاص بالواجهة
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
+
 if (require.main === module) app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
 module.exports = app;
