@@ -1226,7 +1226,7 @@
                             canvas.width = Math.max(1, Math.round(img.width * scale));
                             canvas.height = Math.max(1, Math.round(img.height * scale));
                             canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-                            if (variant === 'white') this.logoWhiteUpload = canvas.toDataURL('image/png');
+                            if (variant === 'white') logoWhiteUpload = canvas.toDataURL('image/png');
                             else this.logoDarkUpload = canvas.toDataURL('image/png');
                             this.isCompressing = false;
                         };
@@ -1238,14 +1238,14 @@
                 },
 
                 async saveLogoImages() {
-                    if (!this.logoWhiteUpload && !this.logoDarkUpload) return;
+                    if (!logoWhiteUpload && !this.logoDarkUpload) return;
                     const response = await fetch(`${this.apiUrl}/admin/store-settings/logo`, {
                         method: 'PUT',
                         credentials: 'include',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            whiteImage: this.logoWhiteUpload || undefined,
-                            darkImage: this.logoDarkUpload || undefined
+                            whiteImage: logoWhiteUpload || undefined,
+                            darkImage: logoDarkUpload || undefined
                         })
                     });
                     const data = await response.json().catch(() => ({}));
@@ -1255,8 +1255,8 @@
                     }
                     if (data.logoWhite) this.logoWhite = data.logoWhite;
                     if (data.logoDark) this.logoDark = data.logoDark;
-                    this.logoWhiteUpload = '';
-                    this.logoDarkUpload = '';
+                    logoWhiteUpload = '';
+                    logoDarkUpload = '';
                     alert('تم حفظ الشعار');
                 },
 
