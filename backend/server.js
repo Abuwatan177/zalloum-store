@@ -1,33 +1,37 @@
 'use strict';
 
 const Database = require('better-sqlite3');
-
 const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
 const fs = require('fs');
-const PORT = Number(process.env.PORT) || 5001;
+const compression = require('compression');
 
+// 1. تعريف تطبيق express أولاً لتفادي خطأ ReferenceError
+const app = express();
+
+const PORT = Number(process.env.PORT) || 5001;
 const DATA_DIR = process.env.NODE_ENV === 'production' ? '/var/data' : (process.env.DATA_DIR || __dirname);
 const DB_PATH = path.join(DATA_DIR, 'store.db');
 
 console.log(`[Database Control] Active database path: ${DB_PATH}`);
 
-// إلغاء إنشاء أي مجلدات تماماً في بيئة ريندر والاعتماد على المجلدات المهيأة مسبقاً
+// إلغاء إنشاء مجلدات التخزين الدائم في بيئة ريندر والاعتماد على إعدادات الـ Disk
 if (process.env.NODE_ENV !== 'production') {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-// جعل مجلد الرفع داخل المجلد المحلي للسيرفر لتفادي خطأ الصلاحيات الدائم
+// 2. تعريف مجلد الرفع بشكل آمن محلياً
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
-// تفعيل مجلدات الملفات الثابتة (Assets & Uploads) للوصول العام وإصلاح مشكلة الـ 403 للخطوط
+// 3. تفعيل مسارات المجلدات الثابتة بشكل صحيح بعد تعريف app
 app.use('/assets/fonts', express.static(path.join(__dirname, 'assets')));
 app.use('/uploads', express.static(UPLOADS_DIR));
 
+// 4. إعداد قائمة النطاقات المسموح لها بالاتصال (CORS & CSP)
 const DEV_ORIGINS = new Set([
   'http://127.0.0.1:5173',
   'http://localhost:5173',
@@ -37,19 +41,14 @@ const DEV_ORIGINS = new Set([
   'http://localhost:5501',
   `http://127.0.0.1:${PORT}`,
   `http://localhost:${PORT}`,
-  'https://zalloum-store.onrender.com',
-  'https://zalloum-store-j6mz.onrender.com' // إضافة النطاق الفعلي لـ Render لحل مشكلة تسجيل الدخول 403
+  'https://onrender.com',
+  'https://onrender.com'
 ]);
+
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'zalloum2003';
 const COOKIE_SECURE = process.env.COOKIE_SECURE === 'true';
 const WHATSAPP_ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN;
 const WHATSAPP_PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
-const WHATSAPP_RECIPIENT_NUMBER = process.env.WHATSAPP_RECIPIENT_NUMBER;
-const SESSION_TTL = 8 * 60 * 60 * 1000;
-const MAX_IMAGE_LENGTH = 5 * 1024 * 1024;
-const sessions = new Map();
-const rateLimits = new Map();
-
 if (DATA_DIR !== __dirname) {
   if (!fs.existsSync(DB_PATH) && fs.existsSync(path.join(__dirname, 'store.db'))) {
     fs.copyFileSync(path.join(__dirname, 'store.db'), DB_PATH);
@@ -58,18 +57,12 @@ if (DATA_DIR !== __dirname) {
     fs.cpSync(path.join(__dirname, 'uploads'), UPLOADS_DIR, { recursive: true });
   }
 }
-fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 const db = new Database(DB_PATH);
-
 if (!ADMIN_PASSWORD) throw new Error('ADMIN_PASSWORD must be configured before starting the server');
 if (!WHATSAPP_ACCESS_TOKEN || !WHATSAPP_PHONE_NUMBER_ID || !WHATSAPP_RECIPIENT_NUMBER) {
   console.warn('WhatsApp Cloud API is not configured; orders will be saved but no message will be sent.');
 }
 
-// إنشاء الجداول (متروك كما هو بدون تغيير)
-
-app.disable('x-powered-by');
-app.use(compression());
 app.get('/healthz', (req, res) => res.json({ ok: true }));
 
 // تعديل جدار حماية الـ CSP والـ CORS للسماح بالمرور لنطاق الموقع الفعلي والملفات الثابتة
