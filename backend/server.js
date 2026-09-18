@@ -7,34 +7,24 @@ const crypto = require('crypto');
 const fs = require('fs');
 const compression = require('compression');
 
-// 1. تعريف تطبيق express أولاً لتفادي خطأ ReferenceError
+// 1. تعريف تطبيق express أولاً لتفادي خطأ ReferenceError نهائياً
+const app = express();
+
 const PORT = Number(process.env.PORT) || 5001;
 const DATA_DIR = process.env.NODE_ENV === 'production' ? '/var/data' : (process.env.DATA_DIR || __dirname);
 
-// حل جذري: التأكد برمجياً من إنشاء المجلد قبل أن تحاول مكتبة قاعدة البيانات القراءة منه
+// 2. التأكد برمجياً من إنشاء المجلد الدائم قبل استدعاء قاعدة البيانات
 try {
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
   }
 } catch (err) {
-  console.error('[Database Control] Failed to create DATA_DIR, falling back to local __dirname:', err.message);
+  console.error('[Database Control] Failed to create DATA_DIR:', err.message);
 }
 
 const DB_PATH = path.join(DATA_DIR, 'store.db');
 console.log(`[Database Control] Active database path: ${DB_PATH}`);
 
-// حماية إضافية لنسخ الملفات الابتدائية بشكل آمن تماماً
-if (DATA_DIR !== __dirname) {
-  if (!fs.existsSync(DB_PATH) && fs.existsSync(path.join(__dirname, 'store.db'))) {
-    try {
-      fs.copyFileSync(path.join(__dirname, 'store.db'), DB_PATH);
-    } catch (e) {
-      console.log('[Database Control] Initial local db copy skipped.');
-    }
-  }
-}
-
-// تعريف مجلد الرفع بشكل آمن
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 try {
   if (!fs.existsSync(UPLOADS_DIR)) {
@@ -44,6 +34,7 @@ try {
   console.log('[Uploads Control] Local uploads dir creation skipped.');
 }
 
+// 3. تفعيل مسارات المجلدات الثابتة بشكل صحيح بعد أن تم تعريف app بنجاح
 app.use('/assets/fonts', express.static(path.join(__dirname, 'assets')));
 app.use('/uploads', express.static(UPLOADS_DIR));
 
@@ -65,25 +56,26 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'zalloum2003';
 const COOKIE_SECURE = process.env.COOKIE_SECURE === 'true';
 const WHATSAPP_ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN;
 const WHATSAPP_PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
-// حماية السيرفر من الانهيار إذا لم تكن قاعدة البيانات الابتدائية موجودة
+const WHATSAPP_RECIPIENT_NUMBER = process.env.WHATSAPP_RECIPIENT_NUMBER;
+const SESSION_TTL = 8 * 60 * 60 * 1000;
+const MAX_IMAGE_LENGTH = 5 * 1024 * 1024;
+const sessions = new Map();
+const rateLimits = new Map();
+
+// 5. حماية إضافية لنسخ الملفات الابتدائية
 if (DATA_DIR !== __dirname) {
   if (!fs.existsSync(DB_PATH) && fs.existsSync(path.join(__dirname, 'store.db'))) {
     try {
       fs.copyFileSync(path.join(__dirname, 'store.db'), DB_PATH);
     } catch (e) {
-      console.log('[Database Control] No initial local db found, skipping copy.');
-    }
-  }
-  if (!fs.existsSync(UPLOADS_DIR) && fs.existsSync(path.join(__dirname, 'uploads'))) {
-    try {
-      fs.cpSync(path.join(__dirname, 'uploads'), UPLOADS_DIR, { recursive: true });
-    } catch (e) {
-      console.log('[Database Control] No initial uploads directory found, skipping copy.');
+      console.log('[Database Control] Initial local db copy skipped.');
     }
   }
 }
 
+// 6. تشغيل قاعدة البيانات بشكل رسمي
 const db = new Database(DB_PATH);
+
 if (!ADMIN_PASSWORD) throw new Error('ADMIN_PASSWORD must be configured before starting the server');
 if (!WHATSAPP_ACCESS_TOKEN || !WHATSAPP_PHONE_NUMBER_ID || !WHATSAPP_RECIPIENT_NUMBER) {
   console.warn('WhatsApp Cloud API is not configured; orders will be saved but no message will be sent.');
@@ -91,7 +83,6 @@ if (!WHATSAPP_ACCESS_TOKEN || !WHATSAPP_PHONE_NUMBER_ID || !WHATSAPP_RECIPIENT_N
 
 app.get('/healthz', (req, res) => res.json({ ok: true }));
 
-// تعديل جدار حماية الـ CSP والـ CORS للسماح بالمرور لنطاق الموقع الفعلي والملفات الثابتة
 app.use((req, res, next) => {
   res.set({
     'X-Content-Type-Options': 'nosniff', 
@@ -117,7 +108,6 @@ app.use((req, res, next) => {
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
 });
-
 app.use(express.json({ limit: '8mb', strict: true }));
 
 function limited(key, max, windowMs) {
@@ -578,10 +568,5 @@ app.post('/api/checkout', async (req, res) => {
     res.status(status).json({ error: err.code === 'OUT_OF_STOCK' ? 'Insufficient stock' : err.message.startsWith('WhatsApp API error') ? 'Unable to send WhatsApp notification' : 'Unable to place order' });
   }
 });
-
-app.use('/uploads', express.static(UPLOADS_DIR, { index: false, fallthrough: false, maxAge: '7d', immutable: true }));
-app.use('/assets', express.static(path.join(__dirname, '..', 'assets'), { index: false, fallthrough: false, maxAge: '7d', immutable: true }));
-app.get(/.*/, (req, res) => res.sendFile(path.join(__dirname, '..', 'index.html')));
-
 if (require.main === module) app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
 module.exports = app;
