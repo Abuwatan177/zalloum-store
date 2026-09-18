@@ -8,29 +8,27 @@ const fs = require('fs');
 const compression = require('compression');
 
 // 1. تعريف تطبيق express أولاً لتفادي خطأ ReferenceError نهائياً
+const app = express();
+
 const PORT = Number(process.env.PORT) || 5001;
 
-// جعل قاعدة البيانات والمجلدات تعمل محلياً داخل السيرفر لتخطي قيود ريندر تماماً
+// 2. إعداد مسارات التخزين داخل مجلد السيرفر مباشرة لتفادي قيود الصلاحيات
 const DATA_DIR = __dirname; 
 const DB_PATH = path.join(DATA_DIR, 'store.db');
 const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 
 console.log(`[Database Control] Active database path: ${DB_PATH}`);
 
-// إنشاء المجلدات محلياً بشكل آمن
+// إنشاء مجلد الرفع محلياً
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
-
-// تفعيل مسارات المجلدات الثابتة
-app.use('/assets/fonts', express.static(path.join(__dirname, 'assets')));
-app.use('/uploads', express.static(UPLOADS_DIR));
 
 // 3. تفعيل مسارات المجلدات الثابتة بشكل صحيح بعد أن تم تعريف app بنجاح
 app.use('/assets/fonts', express.static(path.join(__dirname, 'assets')));
 app.use('/uploads', express.static(UPLOADS_DIR));
 
-// 4. إعداد قائمة النطاقات المسموح لها بالاتصال (CORS & CSP)
+// 4. إعداد قائمة النطاقات المسموح لها بالاتصال (CORS & CSP) بشكل كامل وصحيح
 const DEV_ORIGINS = new Set([
   'http://127.0.0.1:5173',
   'http://localhost:5173',
@@ -43,17 +41,6 @@ const DEV_ORIGINS = new Set([
   'https://onrender.com',
   'https://onrender.com'
 ]);
-
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'zalloum2003';
-const COOKIE_SECURE = process.env.COOKIE_SECURE === 'true';
-const WHATSAPP_ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN;
-const WHATSAPP_PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
-const WHATSAPP_RECIPIENT_NUMBER = process.env.WHATSAPP_RECIPIENT_NUMBER;
-const SESSION_TTL = 8 * 60 * 60 * 1000;
-const MAX_IMAGE_LENGTH = 5 * 1024 * 1024;
-const sessions = new Map();
-const rateLimits = new Map();
-
 // 5. حماية إضافية لنسخ الملفات الابتدائية
 if (DATA_DIR !== __dirname) {
   if (!fs.existsSync(DB_PATH) && fs.existsSync(path.join(__dirname, 'store.db'))) {
