@@ -6,11 +6,14 @@ const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
 const fs = require('fs');
-const compression = require('compression');
-const app = express();
 const PORT = Number(process.env.PORT) || 5001;
-const DATA_DIR = process.env.DATA_DIR || __dirname;
+
+// إجبار السيرفر على استخدام قرص التخزين الدائم لـ Render في بيئة الإنتاج
+const DATA_DIR = process.env.NODE_ENV === 'production' ? '/var/data' : (process.env.DATA_DIR || __dirname);
 const DB_PATH = path.join(DATA_DIR, 'store.db');
+
+// طباعة مسار قاعدة البيانات للتأكد في الكونسول
+console.log(`[Database Control] Active database path: ${DB_PATH}`);
 fs.mkdirSync(DATA_DIR, { recursive: true });
 const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 
