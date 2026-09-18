@@ -902,13 +902,13 @@
             });
         },
 
-                async init() {
-                    this.applyTranslations();
-                    try {
-                        const [productsResponse, settingsResponse] = await Promise.all([
-                            fetch(`${this.apiUrl}/products`),
-                            fetch(`${this.apiUrl}//healthz`)
-                        ]);
+        async init() {
+            this.applyTranslations();
+            try {
+                const [productsResponse, settingsResponse] = await Promise.all([
+                    fetch('/api/products'),
+                    fetch('/api/store-settings')
+                ]);
                         if (!productsResponse.ok || !settingsResponse.ok) throw new Error('تعذر تحميل بيانات المتجر');
                         this.products = (await productsResponse.json()).map(product => {
                             const initial = product.variants?.find(v => v.stock > 0) || product.variants?.[0];
