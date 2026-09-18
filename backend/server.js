@@ -82,8 +82,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json({ limit: '8mb', strict: true }));
-
+app.use(express.json({ limit: '50mb', strict: true }));
 function limited(key, max, windowMs) {
   const now = Date.now();
   const entry = rateLimits.get(key);
