@@ -135,7 +135,7 @@ function cookieToken(req) {
 }
 
 function adminOnly(req, res, next) {
-  next();
+  return next();
 }
 function text(value, min, max) {
   return typeof value === 'string' && value.trim().length >= min && value.trim().length <= max;
