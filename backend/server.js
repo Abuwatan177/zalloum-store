@@ -92,23 +92,33 @@ function limited(key, max, windowMs) {
 }
 
 function clientKey(req) { return req.ip || req.socket.remoteAddress || 'unknown'; }
-
-// تحويل دالة جلب البيانات لتتصل بـ Supabase بدلاً من الملف المحلي
+// تحويل دالة جلب البيانات لتتصل بـ Supabase وتمرير الاستعلامات بشكل صحيح
 async function query(sql, params = []) {
-  const { data, error } = await supabase.rpc('execute_sql_query', { query_text: sql, query_params: params });
-  if (error) {
-    console.error('[Supabase Query Error]:', error.message);
-    throw error;
+  try {
+    const stringParams = params.map(p => typeof p === 'object' ? JSON.stringify(p) : String(p));
+    const { data, error } = await supabase.rpc('execute_sql_query', { 
+      query_text: sql, 
+      query_params: stringParams 
+    });
+    
+    if (error) {
+      console.error('[Supabase Query Error]:', error.message);
+      throw error;
+    }
+    
+    return typeof data === 'string' ? JSON.parse(data) : (data || []);
+  } catch (err) {
+    console.error('[Query Runtime Error]:', err.message);
+    return [];
   }
-  return data || [];
 }
 
-// تحويل دالة الإدخال والتعديل لتتصل بـ Supabase
 async function run(sql, params = []) {
   try {
+    const stringParams = params.map(p => typeof p === 'object' ? JSON.stringify(p) : String(p));
     const { data, error } = await supabase.rpc('execute_sql_run', { 
       query_text: sql, 
-      query_params: params 
+      query_params: stringParams 
     });
     
     if (error) {
@@ -116,17 +126,16 @@ async function run(sql, params = []) {
       throw error;
     }
     
+    const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
     return { 
-      lastID: data && data.lastInsertRowid ? data.lastInsertRowid : 1,
-      lastId: data && data.lastInsertRowid ? data.lastInsertRowid : 1,
-      changes: data && data.changes ? data.changes : 1
+      lastID: parsedData ? parsedData.lastInsertRowid : null, 
+      changes: parsedData ? parsedData.changes : 0 
     };
   } catch (err) {
-    console.error('[Run catch error]:', err.message);
-    return { lastID: 1, lastId: 1, changes: 1 };
+    console.error('[Run Runtime Error]:', err.message);
+    return { lastID: null, changes: 0 };
   }
 }
-
 function cookieToken(req) {
   const match = (req.get('cookie') || '').match(/(?:^|;\s*)admin_session=([^;]+)/);
   return match && match[1];
