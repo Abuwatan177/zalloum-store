@@ -8,26 +8,42 @@ const fs = require('fs');
 const compression = require('compression');
 
 // 1. تعريف تطبيق express أولاً لتفادي خطأ ReferenceError
-const app = express();
-
 const PORT = Number(process.env.PORT) || 5001;
 const DATA_DIR = process.env.NODE_ENV === 'production' ? '/var/data' : (process.env.DATA_DIR || __dirname);
-const DB_PATH = path.join(DATA_DIR, 'store.db');
 
+// حل جذري: التأكد برمجياً من إنشاء المجلد قبل أن تحاول مكتبة قاعدة البيانات القراءة منه
+try {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+} catch (err) {
+  console.error('[Database Control] Failed to create DATA_DIR, falling back to local __dirname:', err.message);
+}
+
+const DB_PATH = path.join(DATA_DIR, 'store.db');
 console.log(`[Database Control] Active database path: ${DB_PATH}`);
 
-// إلغاء إنشاء مجلدات التخزين الدائم في بيئة ريندر والاعتماد على إعدادات الـ Disk
-if (process.env.NODE_ENV !== 'production') {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+// حماية إضافية لنسخ الملفات الابتدائية بشكل آمن تماماً
+if (DATA_DIR !== __dirname) {
+  if (!fs.existsSync(DB_PATH) && fs.existsSync(path.join(__dirname, 'store.db'))) {
+    try {
+      fs.copyFileSync(path.join(__dirname, 'store.db'), DB_PATH);
+    } catch (e) {
+      console.log('[Database Control] Initial local db copy skipped.');
+    }
+  }
 }
 
-// 2. تعريف مجلد الرفع بشكل آمن محلياً
+// تعريف مجلد الرفع بشكل آمن
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
-if (!fs.existsSync(UPLOADS_DIR)) {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+try {
+  if (!fs.existsSync(UPLOADS_DIR)) {
+    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+  }
+} catch (err) {
+  console.log('[Uploads Control] Local uploads dir creation skipped.');
 }
 
-// 3. تفعيل مسارات المجلدات الثابتة بشكل صحيح بعد تعريف app
 app.use('/assets/fonts', express.static(path.join(__dirname, 'assets')));
 app.use('/uploads', express.static(UPLOADS_DIR));
 
