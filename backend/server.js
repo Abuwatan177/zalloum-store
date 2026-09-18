@@ -13,12 +13,16 @@ const DB_PATH = path.join(DATA_DIR, 'store.db');
 
 console.log(`[Database Control] Active database path: ${DB_PATH}`);
 
+// إلغاء إنشاء أي مجلدات تماماً في بيئة ريندر والاعتماد على المجلدات المهيأة مسبقاً
 if (process.env.NODE_ENV !== 'production') {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
-fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+// جعل مجلد الرفع داخل المجلد المحلي للسيرفر لتفادي خطأ الصلاحيات الدائم
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
 
 // تفعيل مجلدات الملفات الثابتة (Assets & Uploads) للوصول العام وإصلاح مشكلة الـ 403 للخطوط
 app.use('/assets/fonts', express.static(path.join(__dirname, 'assets')));
