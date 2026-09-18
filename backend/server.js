@@ -560,12 +560,12 @@ app.post('/api/checkout', async (req, res) => {
   }
 });
 // 1. جعل المجلد الذي يحتوي على ملفات الواجهة جاهزاً للاستخدام (تأكد من استبدال 'dist' بمجلد البناء الخاص بك)
-app.use(express.static(path.join(__dirname, 'dist')));
+// 1. الخروج من مجلد backend والتوجه لمجلد dist الرئيسي
+app.use(express.static(path.join(__dirname, '..', 'dist')));
 
-// 2. توجيه أي مسار غير معرّف إلى ملف index.html الخاص بالواجهة
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+// 2. توجيه أي مسار غير معرّف إلى ملف index.html بالطريقة المتوافقة مع الإصدارات الجديدة
+app.get(/(.*)/, (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
 });
-
 if (require.main === module) app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
 module.exports = app;
