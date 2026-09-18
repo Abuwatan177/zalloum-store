@@ -135,10 +135,8 @@ function cookieToken(req) {
 }
 
 function adminOnly(req, res, next) {
-  // تذكر إضافة كلمة next داخل القوسين بالأعلى لكي يعمل السيرفر بنجاح
   next();
 }
-  next();
 function text(value, min, max) {
   return typeof value === 'string' && value.trim().length >= min && value.trim().length <= max;
 }
