@@ -8,6 +8,7 @@ const fs = require('fs');
 const compression = require('compression');
 
 const app = express();
+
 const PORT = Number(process.env.PORT) || 5001;
 const DATA_DIR = process.env.NODE_ENV === 'production' ? '/var/data' : (process.env.DATA_DIR || __dirname);
 const DB_PATH = path.join(DATA_DIR, 'store.db');
@@ -30,7 +31,7 @@ const DEV_ORIGINS = new Set([
   `http://127.0.0.1:${PORT}`,
   `http://localhost:${PORT}`,
   'https://onrender.com',
-  'https://zalloum-store-j6mz.onrender.com'
+  'https://onrender.com'
 ]);
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'zalloum2003';
@@ -43,7 +44,6 @@ const MAX_IMAGE_LENGTH = 5 * 1024 * 1024;
 const sessions = new Map();
 const rateLimits = new Map();
 
-// استدعاء مكتبة Supabase السحابية وتجهيز عميل الاتصال بأمان
 const { createClient } = require('@supabase/supabase-js');
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
@@ -61,9 +61,9 @@ app.use((req, res, next) => {
     'X-Content-Type-Options': 'nosniff', 
     'X-Frame-Options': 'DENY',
     'Referrer-Policy': 'no-referrer', 
-    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
-    'Content-Security-Policy': "default-src 'self' https:; connect-src 'self' http://127.0.0.1:5001 http://localhost:5001 https:; img-src 'self' http://127.0.0.1:5001 http://localhost:5001 data: https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https: data:; frame-ancestors 'none'"
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()'
   });
+  
   const origin = req.get('origin');
   const host = req.get('host');
   const isSameOrigin = !!origin && origin === `${req.protocol}://${host}`;
@@ -82,7 +82,8 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json({ limit: '50mb', strict: true }));
+app.use(express.json({ limit: '8mb', strict: true }));
+
 function limited(key, max, windowMs) {
   const now = Date.now();
   const entry = rateLimits.get(key);
@@ -92,27 +93,6 @@ function limited(key, max, windowMs) {
 }
 
 function clientKey(req) { return req.ip || req.socket.remoteAddress || 'unknown'; }
-// تحويل دالة جلب البيانات لتتصل بـ Supabase وتمرير الاستعلامات بشكل صحيح
-async function query(sql, params = []) {
-  try {
-    const stringParams = params.map(p => typeof p === 'object' ? JSON.stringify(p) : String(p));
-    const { data, error } = await supabase.rpc('execute_sql_query', { 
-      query_text: sql, 
-      query_params: stringParams 
-    });
-    
-    if (error) {
-      console.error('[Supabase Query Error]:', error.message);
-      throw error;
-    }
-    
-    return typeof data === 'string' ? JSON.parse(data) : (data || []);
-  } catch (err) {
-    console.error('[Query Runtime Error]:', err.message);
-    return [];
-  }
-}
-
 async function run(sql, params = []) {
   try {
     const stringParams = params.map(p => typeof p === 'object' ? JSON.stringify(p) : String(p));
