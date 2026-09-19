@@ -10,14 +10,28 @@ const compression = require('compression');
 const app = express();
 const PORT = Number(process.env.PORT) || 5001;
 
-// حل جذري ومضمون: تشغيل قاعدة البيانات محلياً داخل مجلد الـ backend لتفادي قيود ريندر والصلاحيات
-const DATA_DIR = __dirname; 
+// إجبار السيرفر على استخدام مسار Render الممتد لتفادي أي تضارب أو اختفاء بيانات
+const DATA_DIR = process.env.NODE_ENV === 'production' ? '/var/data' : __dirname;
 const DB_PATH = path.join(DATA_DIR, 'store.db');
 const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 
-console.log(`[Database Control] Active database path: ${DB_PATH}`);
+console.log(`[Database Control] Absolute database path: ${DB_PATH}`);
 
-// إنشاء مجلد الرفع محلياً إذا لم يكن موجوداً
+// تأسيس وإنشاء مجلدات الـ Volume برمجياً بأمان
+try {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+  if (!fs.existsSync(UPLOADS_DIR)) {
+    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+  }
+} catch (err) {
+  console.log('[Directory Control] Notice: Directory already managed by Render Disk Mount.');
+}
+
+// تفعيل مسارات الأصول الثابتة والصور
+app.use('/assets/fonts', express.static(path.join(__dirname, 'assets')));
+app.use('/uploads', express.static(UPLOADS_DIR));
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
