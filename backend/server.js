@@ -117,11 +117,18 @@ function adminOnly(req, res, next) {
   }
   next();
 }
-// حل جذري: استخراج امتداد الصورة تلقائياً بأمان أو وضعه كـ png افتراضي لتفادي الانهيار
-const extension = 'png'; 
-const filename = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}.${extension}`;
-fs.writeFileSync(path.join(UPLOADS_DIR, filename), buffer, { flag: 'wx' });
-return `/uploads/${filename}`;
+// حل جذري: تغليف السطر المكسور داخل دالة saveImage الصحيحة لاستلام كائن الـ buffer بنجاح
+function saveImage(buffer) {
+  try {
+    const extension = 'png'; 
+    const filename = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}.${extension}`;
+    fs.writeFileSync(path.join(UPLOADS_DIR, filename), buffer, { flag: 'wx' });
+    return `/uploads/${filename}`;
+  } catch (err) {
+    console.error('[Image Upload Error]:', err.message);
+    return '';
+  }
+}
 async function persistProductImages(rows) {
   for (const product of rows) {
     if (!product.image.startsWith('data:')) continue;
