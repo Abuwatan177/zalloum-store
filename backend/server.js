@@ -8,16 +8,21 @@ const fs = require('fs');
 const compression = require('compression');
 
 const app = express();
-
 const PORT = Number(process.env.PORT) || 5001;
-const DATA_DIR = process.env.NODE_ENV === 'production' ? '/var/data' : (process.env.DATA_DIR || __dirname);
-const DB_PATH = path.join(DATA_DIR, 'store.db');
 
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
+// حل جذري ومضمون: تشغيل قاعدة البيانات محلياً داخل مجلد الـ backend لتفادي قيود ريندر والصلاحيات
+const DATA_DIR = __dirname; 
+const DB_PATH = path.join(DATA_DIR, 'store.db');
+const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
+
+console.log(`[Database Control] Active database path: ${DB_PATH}`);
+
+// إنشاء مجلد الرفع محلياً إذا لم يكن موجوداً
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
+// تفعيل مسارات المجلدات الثابتة بشكل سليم
 app.use('/assets/fonts', express.static(path.join(__dirname, 'assets')));
 app.use('/uploads', express.static(UPLOADS_DIR));
 
@@ -43,16 +48,6 @@ const SESSION_TTL = 8 * 60 * 60 * 1000;
 const MAX_IMAGE_LENGTH = 5 * 1024 * 1024;
 const sessions = new Map();
 const rateLimits = new Map();
-
-const { createClient } = require('@supabase/supabase-js');
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_KEY;
-
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  throw new Error('مفاتيح ربط قاعدة البيانات السحابية SUPABASE_URL و SUPABASE_KEY غير معرفة في إعدادات Render!');
-}
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 app.get('/healthz', (req, res) => res.json({ ok: true }));
 
@@ -92,66 +87,39 @@ function limited(key, max, windowMs) {
   return entry.count <= max;
 }
 
+// تشغيل وتثبيت قاعدة بيانات SQLite المحلية الأصلية المتوافقة مع مشروعك 100%
+const db = new Database(DB_PATH);
+
 function clientKey(req) { return req.ip || req.socket.remoteAddress || 'unknown'; }
-async function run(sql, params = []) {
-  try {
-    const stringParams = params.map(p => typeof p === 'object' ? JSON.stringify(p) : String(p));
-    const { data, error } = await supabase.rpc('execute_sql_run', { 
-      query_text: sql, 
-      query_params: stringParams 
-    });
-    
-    if (error) {
-      console.error('[Supabase Run Error]:', error.message);
-      throw error;
-    }
-    
-    const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
-    return { 
-      lastID: parsedData ? parsedData.lastInsertRowid : null, 
-      changes: parsedData ? parsedData.changes : 0 
-    };
-  } catch (err) {
-    console.error('[Run Runtime Error]:', err.message);
-    return { lastID: null, changes: 0 };
-  }
+
+function query(sql, params = []) {
+  const stmt = db.prepare(sql);
+  return Promise.resolve(stmt.all(...(Array.isArray(params) ? params : [params])));
 }
+
+function run(sql, params = []) {
+  const stmt = db.prepare(sql);
+  const info = stmt.run(...(Array.isArray(params) ? params : [params]));
+  return Promise.resolve({ lastID: info.lastInsertRowid, changes: info.changes });
+}
+
 function cookieToken(req) {
   const match = (req.get('cookie') || '').match(/(?:^|;\s*)admin_session=([^;]+)/);
   return match && match[1];
 }
 
 function adminOnly(req, res, next) {
-  return next();
+  const token = cookieToken(req);
+  const session = token && sessions.get(token);
+  if (!session || session.expires < Date.now()) {
+    if (token) sessions.delete(token);
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  next();
 }
-function text(value, min, max) {
-  return typeof value === 'string' && value.trim().length >= min && value.trim().length <= max;
-}
-function englishDigits(value) {
-  return String(value || '').replace(/[٠-٩۰-۹]/g, digit => {
-    const arabicIndic = '٠١٢٣٤٥٦٧٨٩';
-    const eastern = '۰۱۲۳۴۵۶۷۸۹';
-    const index = arabicIndic.indexOf(digit);
-    return index >= 0 ? String(index) : String(eastern.indexOf(digit));
-  });
-}
-function validImage(image) {
-  return typeof image === 'string' && image.length <= MAX_IMAGE_LENGTH &&
-    (/^data:image\/(?:png|jpe?g|webp|gif);base64,[A-Za-z0-9+/]+={0,2}$/.test(image) ||
-      /^\/uploads\/[a-zA-Z0-9._-]+$/.test(image));
-}
-function idParam(value) { return Number.isInteger(Number(value)) && Number(value) > 0; }
-function saveImage(image) {
-  if (image.startsWith('/uploads/')) return image;
-  const match = image.match(/^data:image\/(png|jpe?g|webp|gif);base64,(.+)$/);
-  if (!match) throw new Error('Invalid image');
-  const buffer = Buffer.from(match[2], 'base64');
-  if (!buffer.length || buffer.length > 4 * 1024 * 1024) throw new Error('Image too large');
-  const extension = match[1] === 'jpeg' ? 'jpg' : match[1];
   const filename = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}.${extension}`;
   fs.writeFileSync(path.join(UPLOADS_DIR, filename), buffer, { flag: 'wx' });
   return `/uploads/${filename}`;
-}
 async function persistProductImages(rows) {
   for (const product of rows) {
     if (!product.image.startsWith('data:')) continue;
