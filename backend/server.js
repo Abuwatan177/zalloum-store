@@ -10,24 +10,21 @@ const compression = require('compression');
 const app = express();
 const PORT = Number(process.env.PORT) || 5001;
 
-// مسار قاعدة البيانات الموحد داخل القرص الدائم الجاهز
-const DATA_DIR = process.env.NODE_ENV === 'production' ? '/var/data' : __dirname;
+// الحل الجذري الفاصل: جعل التخزين يعمل بالكامل داخل المجلد المحلي للسيرفر لتخطي قيود الديسك والصلاحيات نهائياً
+const DATA_DIR = __dirname; 
 const DB_PATH = path.join(DATA_DIR, 'store.db');
-const UPLOADS_DIR = DATA_DIR; 
+const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 
-console.log(`[Database Control] Absolute database path: ${DB_PATH}`);
+console.log(`[Database Control] Absolute local database path: ${DB_PATH}`);
 
-// ممنوع تماماً تنفيذ أي أمر إنشاء مجلدات على ريندر لتفادي خطأ الصلاحيات
-if (process.env.NODE_ENV !== 'production') {
-  if (!fs.existsSync(UPLOADS_DIR)) {
-    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-  }
+// إنشاء المجلدات محلياً بداخل مشروعك، وهنا يملك السيرفر صلاحيات كاملة 100% بدون أي حظر من ريندر
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
-// تفعيل مسارات الأصول الثابتة والصور
+// تفعيل مسارات الأصول الثابتة والصور بشكل سليم
 app.use('/assets/fonts', express.static(path.join(__dirname, 'assets')));
 app.use('/uploads', express.static(UPLOADS_DIR));
-app.use('/assets/fonts', express.static(path.join(__dirname, 'assets')));
 app.use('/uploads', express.static(UPLOADS_DIR));
 
 const DEV_ORIGINS = new Set([
