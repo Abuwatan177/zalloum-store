@@ -88,8 +88,54 @@ function limited(key, max, windowMs) {
 }
 
 // تشغيل وتثبيت قاعدة بيانات SQLite المحلية الأصلية المتوافقة مع مشروعك 100%
-// تشغيل قاعدة البيانات المحلية وتأسيس الجداول تلقائياً لحل خطأ الـ 500 للأبد
+// حل جذري: إجبار السيرفر على بناء الجداول وإصلاح قاعدة البيانات التالفة على ريندر
 const db = new Database(DB_PATH);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS products (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    price REAL,
+    image TEXT,
+    category TEXT,
+    sizes TEXT,
+    colors TEXT,
+    stock INTEGER NOT NULL DEFAULT 0,
+    size TEXT NOT NULL DEFAULT '',
+    color TEXT NOT NULL DEFAULT '',
+    parent_id INTEGER,
+    description TEXT NOT NULL DEFAULT ''
+  );
+
+  CREATE TABLE IF NOT EXISTS store_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL DEFAULT ''
+  );
+
+  CREATE TABLE IF NOT EXISTS orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    items TEXT,
+    total REAL,
+    status TEXT,
+    customer_name TEXT NOT NULL DEFAULT '',
+    phone TEXT NOT NULL DEFAULT '',
+    location TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS order_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    product_id INTEGER NOT NULL,
+    product_name TEXT NOT NULL,
+    price REAL NOT NULL,
+    quantity INTEGER NOT NULL
+  );
+  
+  -- إدخال قيم ابتدائية للإعدادات إذا كان الجدول فارغاً لحل خطأ الـ 500 فوراً
+  INSERT OR IGNORE INTO store_settings (key, value) VALUES ('phone', '0958924096');
+  INSERT OR IGNORE INTO store_settings (key, value) VALUES ('logo', '');
+`);
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS products (
