@@ -10,34 +10,23 @@ const compression = require('compression');
 const app = express();
 const PORT = Number(process.env.PORT) || 5001;
 
-// حل جذري: توحيد مسار قاعدة البيانات والصور في جذر القرص الدائم الجاهز لتفادي خطأ mkdir تماماً
+// مسار قاعدة البيانات الموحد داخل القرص الدائم الجاهز
 const DATA_DIR = process.env.NODE_ENV === 'production' ? '/var/data' : __dirname;
 const DB_PATH = path.join(DATA_DIR, 'store.db');
-
-// جعل مجلد الصور هو نفس جذر القرص في ريندر لتخطي قيود الصلاحيات برمجياً
 const UPLOADS_DIR = DATA_DIR; 
 
 console.log(`[Database Control] Absolute database path: ${DB_PATH}`);
 
-// إنشاء المجلدات فقط في البيئة المحلية (Local) أما في ريندر فالقرص جاهز ومفتوح تلقائياً
+// ممنوع تماماً تنفيذ أي أمر إنشاء مجلدات على ريندر لتفادي خطأ الصلاحيات
 if (process.env.NODE_ENV !== 'production') {
   if (!fs.existsSync(UPLOADS_DIR)) {
     fs.mkdirSync(UPLOADS_DIR, { recursive: true });
   }
 }
 
-// تفعيل مسارات الأصول الثابتة والصور بشكل سليم
-app.use('/assets/fonts', express.static(path.join(__dirname, 'assets')));
-app.use('/uploads', express.static(UPLOADS_DIR));
-
 // تفعيل مسارات الأصول الثابتة والصور
 app.use('/assets/fonts', express.static(path.join(__dirname, 'assets')));
 app.use('/uploads', express.static(UPLOADS_DIR));
-if (!fs.existsSync(UPLOADS_DIR)) {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-}
-
-// تفعيل مسارات المجلدات الثابتة بشكل سليم
 app.use('/assets/fonts', express.static(path.join(__dirname, 'assets')));
 app.use('/uploads', express.static(UPLOADS_DIR));
 
@@ -51,7 +40,7 @@ const DEV_ORIGINS = new Set([
   `http://127.0.0.1:${PORT}`,
   `http://localhost:${PORT}`,
   'https://onrender.com',
-  'https://onrender.com'
+  'https://zalloum-store-j6mz.onrender.com'
 ]);
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'zalloum2003';
