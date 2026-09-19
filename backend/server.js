@@ -157,27 +157,21 @@ function run(sql, params = []) {
     return Promise.resolve({ lastID: null, changes: 0 });
   }
 }
-  return match && match[1];
+  return match && match[1];// حل جذري: إصلاح تعريف الكوكي والتحقق من الجلسة لمنع انهيار السيرفر
+function cookieToken(req) {
+  const cookieHeader = req.get('cookie') || '';
+  const match = cookieHeader.match(/(?:^|;\s*)admin_session=([^;]+)/);
+  return match ? match[1] : null;
+}
+
 function adminOnly(req, res, next) {
   const token = cookieToken(req);
-  const session = token && sessions.get(token);
+  const session = token ? sessions.get(token) : null;
   if (!session || session.expires < Date.now()) {
     if (token) sessions.delete(token);
     return res.status(401).json({ error: 'Authentication required' });
   }
   next();
-}
-// حل جذري: تغليف السطر المكسور داخل دالة saveImage الصحيحة لاستلام كائن الـ buffer بنجاح
-function saveImage(buffer) {
-  try {
-    const extension = 'png'; 
-    const filename = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}.${extension}`;
-    fs.writeFileSync(path.join(UPLOADS_DIR, filename), buffer, { flag: 'wx' });
-    return `/uploads/${filename}`;
-  } catch (err) {
-    console.error('[Image Upload Error]:', err.message);
-    return '';
-  }
 }
 async function persistProductImages(rows) {
   for (const product of rows) {
