@@ -10,24 +10,25 @@ const compression = require('compression');
 const app = express();
 const PORT = Number(process.env.PORT) || 5001;
 
-// إجبار السيرفر على استخدام مسار Render الممتد لتفادي أي تضارب أو اختفاء بيانات
+// حل جذري: توحيد مسار قاعدة البيانات والصور في جذر القرص الدائم الجاهز لتفادي خطأ mkdir تماماً
 const DATA_DIR = process.env.NODE_ENV === 'production' ? '/var/data' : __dirname;
 const DB_PATH = path.join(DATA_DIR, 'store.db');
-const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
+
+// جعل مجلد الصور هو نفس جذر القرص في ريندر لتخطي قيود الصلاحيات برمجياً
+const UPLOADS_DIR = DATA_DIR; 
 
 console.log(`[Database Control] Absolute database path: ${DB_PATH}`);
 
-// تأسيس وإنشاء مجلدات الـ Volume برمجياً بأمان
-try {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
+// إنشاء المجلدات فقط في البيئة المحلية (Local) أما في ريندر فالقرص جاهز ومفتوح تلقائياً
+if (process.env.NODE_ENV !== 'production') {
   if (!fs.existsSync(UPLOADS_DIR)) {
     fs.mkdirSync(UPLOADS_DIR, { recursive: true });
   }
-} catch (err) {
-  console.log('[Directory Control] Notice: Directory already managed by Render Disk Mount.');
 }
+
+// تفعيل مسارات الأصول الثابتة والصور بشكل سليم
+app.use('/assets/fonts', express.static(path.join(__dirname, 'assets')));
+app.use('/uploads', express.static(UPLOADS_DIR));
 
 // تفعيل مسارات الأصول الثابتة والصور
 app.use('/assets/fonts', express.static(path.join(__dirname, 'assets')));
