@@ -161,9 +161,8 @@ function run(sql, params = []) {
 function cookieToken(req) {
   const cookieHeader = req.get('cookie') || '';
   const match = cookieHeader.match(/(?:^|;\s*)admin_session=([^;]+)/);
-  return match ? match[1] : null;
+  return match ? match : null;
 }
-
 function adminOnly(req, res, next) {
   const token = cookieToken(req);
   const session = token ? sessions.get(token) : null;
