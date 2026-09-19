@@ -93,14 +93,24 @@ const db = new Database(DB_PATH);
 function clientKey(req) { return req.ip || req.socket.remoteAddress || 'unknown'; }
 
 function query(sql, params = []) {
-  const stmt = db.prepare(sql);
-  return Promise.resolve(stmt.all(...(Array.isArray(params) ? params : [params])));
+  try {
+    const stmt = db.prepare(sql);
+    return Promise.resolve(stmt.all(...(Array.isArray(params) ? params : [params])));
+  } catch (err) {
+    console.error('[SQLite Query Error]:', err.message);
+    return Promise.resolve([]);
+  }
 }
 
 function run(sql, params = []) {
-  const stmt = db.prepare(sql);
-  const info = stmt.run(...(Array.isArray(params) ? params : [params]));
-  return Promise.resolve({ lastID: info.lastInsertRowid, changes: info.changes });
+  try {
+    const stmt = db.prepare(sql);
+    const info = stmt.run(...(Array.isArray(params) ? params : [params]));
+    return Promise.resolve({ lastID: info.lastInsertRowid, changes: info.changes });
+  } catch (err) {
+    console.error('[SQLite Run Error]:', err.message);
+    return Promise.resolve({ lastID: null, changes: 0 });
+  }
 }
 
 function cookieToken(req) {
