@@ -175,12 +175,14 @@ app.post('/api/admin/products/:id/variants', adminOnly, requireDb, async (req, r
   try {
     const parent = idOf(req.params.id);
     if (!parent) return fail(res, 400, 'Invalid parent product id');
-    const { data: parentRow, error: parentError } = await supabase.from('products').select('name,price,category,description').eq('id', parent).is('parent_id', null).single();
+    const { data: parentRow, error: parentError } = await supabase.from('products').select('name,price,original_price,sale_price,category,description').eq('id', parent).is('parent_id', null).single();
     if (parentError || !parentRow) return fail(res, 404, 'Parent product not found');
     const v = validateProduct({
       ...req.body,
       name: req.body.name || req.body.variantName || parentRow.name,
-      price: req.body.price ?? parentRow.price,
+      price: req.body.price ?? parentRow.sale_price ?? parentRow.price,
+      original_price: req.body.original_price ?? parentRow.original_price ?? parentRow.sale_price ?? parentRow.price,
+      sale_price: req.body.sale_price ?? parentRow.sale_price ?? parentRow.price,
       category: req.body.category ?? parentRow.category,
       description: req.body.description ?? parentRow.description,
       parent_id: parent
