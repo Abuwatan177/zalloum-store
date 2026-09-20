@@ -1379,47 +1379,54 @@
                     return [...parents.values()];
                 },
 
-                compressImage(event) {
-                    const file = event.target.files[0];
-                    if (!file) return;
-                    
-                    this.isCompressing = true;
-                    const reader = new FileReader();
-                    reader.readAsDataURL(file);
-                    reader.onload = (e) => {
-                        const img = new Image();
-                        img.src = e.target.result;
-                        img.onload = () => {
-                            const canvas = document.createElement('canvas');
-                            canvas.width = 400; 
-                            canvas.height = 400;
-                            const ctx = canvas.getContext('2d');
-                            ctx.drawImage(img, 0, 0, 400, 400);
-                            this.newProduct.image = canvas.toDataURL('image/jpeg', 0.7);
-                            this.isCompressing = false;
+                processImage(file, maxDimension = 1600, quality = 0.9, type = 'image/webp') {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onerror = () => reject(new Error('تعذر تحميل الصورة'));
+                        reader.onload = () => {
+                            const img = new Image();
+                            img.onerror = () => reject(new Error('تعذر قراءة الصورة'));
+                            img.onload = () => {
+                                const scale = Math.min(1, maxDimension / Math.max(img.width, img.height));
+                                const canvas = document.createElement('canvas');
+                                canvas.width = Math.max(1, Math.round(img.width * scale));
+                                canvas.height = Math.max(1, Math.round(img.height * scale));
+                                const context = canvas.getContext('2d');
+                                context.imageSmoothingEnabled = true;
+                                context.imageSmoothingQuality = 'high';
+                                context.drawImage(img, 0, 0, canvas.width, canvas.height);
+                                resolve(canvas.toDataURL(type, quality));
+                            };
+                            img.src = reader.result;
                         };
-                    };
+                        reader.readAsDataURL(file);
+                    });
                 },
 
-                compressVariantImage(event) {
+                async compressImage(event) {
                     const file = event.target.files[0];
                     if (!file) return;
                     this.isCompressing = true;
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const img = new Image();
-                        img.onload = () => {
-                            const canvas = document.createElement('canvas');
-                            canvas.width = 400; canvas.height = 400;
-                            canvas.getContext('2d').drawImage(img, 0, 0, 400, 400);
-                            this.newVariant.image = canvas.toDataURL('image/jpeg', 0.7);
-                            this.isCompressing = false;
-                        };
-                        img.onerror = () => { this.isCompressing = false; alert('تعذر قراءة الصورة'); };
-                        img.src = e.target.result;
-                    };
-                    reader.onerror = () => { this.isCompressing = false; alert('تعذر تحميل الصورة'); };
-                    reader.readAsDataURL(file);
+                    try {
+                        this.newProduct.image = await this.processImage(file);
+                    } catch (error) {
+                        alert(error.message);
+                    } finally {
+                        this.isCompressing = false;
+                    }
+                },
+
+                async compressVariantImage(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    this.isCompressing = true;
+                    try {
+                        this.newVariant.image = await this.processImage(file);
+                    } catch (error) {
+                        alert(error.message);
+                    } finally {
+                        this.isCompressing = false;
+                    }
                 },
 
                 compressHeroImage(event, index) {
@@ -1431,12 +1438,12 @@
                         const img = new Image();
                         img.onload = () => {
                             const canvas = document.createElement('canvas');
-                            const maxSize = 1000;
+                            const maxSize = 1600;
                             const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
                             canvas.width = Math.max(1, Math.round(img.width * scale));
                             canvas.height = Math.max(1, Math.round(img.height * scale));
                             canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-                            this.heroUploads[index] = canvas.toDataURL('image/jpeg', 0.8);
+                            this.heroUploads[index] = canvas.toDataURL('image/webp', 0.9);
                             this.isCompressing = false;
                         };
                         img.onerror = () => { this.isCompressing = false; alert('تعذر قراءة الصورة'); };
@@ -1572,9 +1579,14 @@
                         const img = new Image();
                         img.onload = () => {
                             const canvas = document.createElement('canvas');
-                            canvas.width = 400; canvas.height = 400;
-                            canvas.getContext('2d').drawImage(img, 0, 0, 400, 400);
-                            this.editingProduct.image = canvas.toDataURL('image/jpeg', 0.7);
+                            const scale = Math.min(1, 1600 / Math.max(img.width, img.height));
+                            canvas.width = Math.max(1, Math.round(img.width * scale));
+                            canvas.height = Math.max(1, Math.round(img.height * scale));
+                            const context = canvas.getContext('2d');
+                            context.imageSmoothingEnabled = true;
+                            context.imageSmoothingQuality = 'high';
+                            context.drawImage(img, 0, 0, canvas.width, canvas.height);
+                            this.editingProduct.image = canvas.toDataURL('image/webp', 0.9);
                             this.isCompressing = false;
                         };
                         img.src = e.target.result;
