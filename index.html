@@ -539,6 +539,7 @@
             <div class="mt-4">
     <button @click="saveLogoImages" :disabled="(!this.logoWhiteUpload && !this.logoDarkUpload) || isCompressing" class="gold-bg disabled:bg-gray-300 disabled:text-gray-500 text-black font-bold px-6 py-3 rounded-xl w-full">حفظ الشعار</button>
 </div>
+        </div>
         <div class="lg:col-span-3 bg-white rounded-2xl p-6 border border-[#D4AF37] shadow-sm">
             <h3 class="text-lg font-bold text-[#121212]">رقم واتساب للتواصل</h3>
             <p class="text-sm text-gray-500 mt-1 mb-4">اكتب الرقم بصيغة دولية بدون علامة +، وسيظهر رابط الدردشة في الفوتر.</p>
@@ -1244,25 +1245,29 @@
 
                 async saveLogoImages() {
                     if (!this.logoWhiteUpload && !this.logoDarkUpload) return;
-                    const response = await fetch(`${this.apiUrl}/admin/store-settings/logo`, {
-                        method: 'PUT',
-                        credentials: 'include',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            whiteImage:this.logoWhiteUpload || undefined,
-                            darkImage: this.logoDarkUpload || undefined
-                        })
-                    });
-                    const data = await response.json().catch(() => ({}));
-                    if (!response.ok) {
-                        alert(data.error || 'تعذر حفظ الشعارين');
-                        return;
+                    try {
+                        const response = await fetch(`${this.apiUrl}/admin/store-settings/logo`, {
+                            method: 'PUT',
+                            credentials: 'include',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                whiteImage: this.logoWhiteUpload || null,
+                                darkImage: this.logoDarkUpload || null
+                            })
+                        });
+                        const data = await response.json().catch(() => ({}));
+                        if (!response.ok) {
+                            alert(data.error || 'تعذر حفظ الشعارين');
+                            return;
+                        }
+                        if (data.logoWhite) this.logoWhite = data.logoWhite;
+                        if (data.logoDark) this.logoDark = data.logoDark;
+                        this.logoWhiteUpload = '';
+                        this.logoDarkUpload = '';
+                        alert('تم حفظ الشعار');
+                    } catch (_) {
+                        alert('تعذر الاتصال بالخادم لحفظ الشعار');
                     }
-                    if (data.logoWhite) this.logoWhite = data.logoWhite;
-                    if (data.logoDark) this.logoDark = data.logoDark;
-this.logoWhiteUpload = '';
-this.logoDarkUpload = '';
-                    alert('تم حفظ الشعار');
                 },
 
                 async saveWhatsappNumber() {

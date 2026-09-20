@@ -54,10 +54,16 @@ async function imageUrl(value) {
   const match = value.match(/^data:image\/([a-z0-9.+-]+);base64,(.+)$/i);
   if (!match) throw Object.assign(new Error('Invalid image data'), { status: 400 });
   const ext = match[1].toLowerCase() === 'jpeg' ? 'jpg' : match[1].toLowerCase();
-  const buffer = Buffer.from(match[2], 'base64');
+  const encoded = match[2].replace(/\s/g, '');
+  const buffer = Buffer.from(encoded, 'base64');
   if (!buffer.length || buffer.length > 8 * 1024 * 1024) throw Object.assign(new Error('Image is empty or too large'), { status: 400 });
   const file = `images/${Date.now()}-${crypto.randomBytes(8).toString('hex')}.${ext}`;
-  const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(file, buffer, { contentType: `image/${match[1]}`, upsert: false });
+  const contentType = `image/${match[1].toLowerCase()}`;
+  const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(file, buffer, {
+    contentType,
+    cacheControl: '31536000',
+    upsert: false
+  });
   if (error) throw Object.assign(new Error(`Image upload failed: ${error.message}`), { status: 502 });
   return supabase.storage.from(STORAGE_BUCKET).getPublicUrl(file).data.publicUrl;
 }
@@ -169,8 +175,8 @@ app.delete('/api/admin/orders/:id', adminOnly, requireDb, async (req, res, next)
 
 const settingRoutes = {
   logo: async b => {
-    const logoWhite = b.whiteImage !== undefined ? await imageUrl(b.whiteImage) : undefined;
-    const logoDark = b.darkImage !== undefined ? await imageUrl(b.darkImage) : undefined;
+    const logoWhite = b.whiteImage ? await imageUrl(b.whiteImage) : undefined;
+    const logoDark = b.darkImage ? await imageUrl(b.darkImage) : undefined;
     if (logoWhite !== undefined) await setting('store_logo_white', logoWhite);
     if (logoDark !== undefined) await setting('store_logo_dark', logoDark);
     return {
@@ -195,7 +201,10 @@ const settingRoutes = {
   }
 };
 for (const [name, save] of Object.entries(settingRoutes)) app.put(`/api/admin/store-settings/${name}`, adminOnly, requireDb, async (req, res, next) => {
-  try { res.json({ success: true, ...(await save(req.body || {})) }); } catch (e) { next(e); }
+  try {
+    const result = await save(req.body || {});
+    res.json({ success: true, ...result });
+  } catch (e) { next(e); }
 });
 
 app.use('/assets/fonts', express.static(path.join(__dirname, 'assets')));
