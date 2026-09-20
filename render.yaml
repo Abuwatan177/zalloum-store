@@ -4,7 +4,7 @@ services:
     runtime: node
     rootDir: backend
     buildCommand: npm install
-   startCommand: node server.js
+    startCommand: node server.js
     healthCheckPath: /healthz
     disk:
       name: zalloum-store-data
@@ -17,3 +17,11 @@ services:
         value: "true"
       - key: DATA_DIR
         value: /var/data
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: store-images

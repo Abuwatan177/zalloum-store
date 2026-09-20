@@ -1243,7 +1243,7 @@
                 },
 
                 async saveLogoImages() {
-                    if (this.logoWhiteUpload && !this.logoDarkUpload) return;
+                    if (!this.logoWhiteUpload && !this.logoDarkUpload) return;
                     const response = await fetch(`${this.apiUrl}/admin/store-settings/logo`, {
                         method: 'PUT',
                         credentials: 'include',

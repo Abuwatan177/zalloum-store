@@ -3,246 +3,205 @@
 const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
-const fs = require('fs');
 const compression = require('compression');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
-const PORT = Number(process.env.PORT) || 5001;
-
-// إعداد Supabase (يتم قراءة المفاتيح من متغيرات البيئة على Render)
+const PORT = Number(process.env.PORT || 5001);
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
-const supabase = (SUPABASE_URL && SUPABASE_ANON_KEY) ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-
-// مسار التخزين المحلي للصور المرفوعة مع حماية تامة ضد أخطاء الصلاحيات على Render
-let UPLOADS_DIR = path.join(__dirname, 'uploads');
-try {
-  if (process.env.DATA_DIR) {
-    const diskUploads = path.join(process.env.DATA_DIR, 'uploads');
-    if (!fs.existsSync(diskUploads)) {
-      fs.mkdirSync(diskUploads, { recursive: true });
-    }
-    UPLOADS_DIR = diskUploads;
-  } else {
-    if (!fs.existsSync(UPLOADS_DIR)) {
-      fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-    }
-  }
-} catch (err) {
-  console.warn('Warning: Could not use /var/data/uploads, falling back to local directory:', err.message);
-  UPLOADS_DIR = path.join(__dirname, 'uploads');
-  if (!fs.existsSync(UPLOADS_DIR)) {
-    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-  }
-}
-app.use('/uploads', express.static(UPLOADS_DIR));
-app.use('/assets/fonts', express.static(path.join(__dirname, 'assets')));
-
-const DEV_ORIGINS = new Set([
-  'http://127.0.0.1:5173',
-  'http://localhost:5173',
-  'https://onrender.com',
-  'https://zalloum-store-j6mz.onrender.com'
-]);
-
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'zalloum2003';
-const COOKIE_SECURE = process.env.COOKIE_SECURE === 'true';
-const WHATSAPP_ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN;
-const WHATSAPP_PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
-const WHATSAPP_RECIPIENT_NUMBER = process.env.WHATSAPP_RECIPIENT_NUMBER;
-const SESSION_TTL = 8 * 60 * 60 * 1000;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+const STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET || 'store-images';
+const supabase = SUPABASE_URL && SUPABASE_KEY ? createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const sessions = new Map();
-const rateLimits = new Map();
+const SESSION_TTL = 8 * 60 * 60 * 1000;
 
-app.get('/healthz', (req, res) => res.json({ ok: true }));
-
+app.use(compression());
+app.use(express.json({ limit: '12mb', strict: true }));
 app.use((req, res, next) => {
-  res.set({
-    'X-Content-Type-Options': 'nosniff',
-    'X-Frame-Options': 'DENY',
-    'Referrer-Policy': 'no-referrer',
-    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()'
-  });
-  
+  res.set({ 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer' });
   const origin = req.get('origin');
-  const host = req.get('host');
-  const isSameOrigin = !!origin && origin === `${req.protocol}://${host}`;
-  const allowed = origin === 'null' || (origin ? DEV_ORIGINS.has(origin) : false);
-  
-  if (origin && !isSameOrigin && !allowed) return res.status(403).json({ error: 'Origin not allowed' });
-  if (origin && (isSameOrigin || allowed)) {
-    res.set({
-      'Access-Control-Allow-Origin': origin,
-      'Access-Control-Allow-Credentials': 'true',
-      'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
-    });
-  }
+  const allowed = !origin || origin === `${req.protocol}://${req.get('host')}` ||
+    /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
+    origin === 'https://zalloum-store-j6mz.onrender.com';
+  if (!allowed) return res.status(403).json({ error: 'Origin not allowed' });
+  if (origin) res.set({ 'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Credentials': 'true', 'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' });
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
 });
 
-app.use(express.json({ limit: '8mb', strict: true }));
-
-function cookieToken(req) {
-  const cookieHeader = req.get('cookie') || '';
-  const match = cookieHeader.match(/(?:^|;\s*)admin_session=([^;]+)/);
- return match ? match[1] : null;
-}
+const fail = (res, status, error, details) => res.status(status).json({ error, ...(details ? { details } : {}) });
+const requireDb = (req, res, next) => supabase ? next() : fail(res, 503, 'Supabase is not configured');
+const idOf = value => Number.isInteger(Number(value)) && Number(value) > 0 ? Number(value) : null;
+const text = (value, fallback = '') => typeof value === 'string' ? value.trim() : fallback;
+function cookieToken(req) { const m = (req.get('cookie') || '').match(/(?:^|;\s*)admin_session=([^;]+)/); return m && m[1]; }
 function adminOnly(req, res, next) {
-  const token = cookieToken(req);
-  const session = token ? sessions.get(token) : null;
-  if (!session || session.expires < Date.now()) {
-    if (token) sessions.delete(token);
-    return res.status(401).json({ error: 'Authentication required' });
-  }
+  const token = cookieToken(req); const session = token && sessions.get(token);
+  if (!session || session.expires < Date.now()) { if (token) sessions.delete(token); return fail(res, 401, 'Authentication required'); }
   next();
 }
-
-// دالة حفظ الصور محلياً داخل مجلد الرفع
-function saveImage(base64Data) {
-  if (!base64Data || typeof base64Data !== 'string' || !base64Data.startsWith('data:image')) {
-    return base64Data;
-  }
-  try {
-    const matches = base64Data.match(/^data:image\/([A-Za-z-+\/]+);base64,(.+)$/);
-    if (!matches || matches.length !== 3) return base64Data;
-    const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
-    const buffer = Buffer.from(matches[2], 'base64');
-    const filename = `img_${Date.now()}_${crypto.randomBytes(4).toString('hex')}.${ext}`;
-    fs.writeFileSync(path.join(UPLOADS_DIR, filename), buffer);
-    return `/uploads/${filename}`;
-  } catch (err) {
-    console.error('Image save error:', err.message);
-    return base64Data;
-  }
+function validateProduct(body, partial = false) {
+  const out = {};
+  if (!partial || body.name !== undefined) { out.name = text(body.name); if (!out.name) return 'name is required'; }
+  for (const key of ['category', 'description', 'size', 'color']) if (!partial || body[key] !== undefined) out[key] = text(body[key]);
+  if (!partial || body.price !== undefined) { out.price = Number(body.price); if (!Number.isFinite(out.price) || out.price < 0) return 'price must be a non-negative number'; }
+  if (!partial || body.stock !== undefined) { out.stock = Number(body.stock ?? 0); if (!Number.isInteger(out.stock) || out.stock < 0) return 'stock must be a non-negative integer'; }
+  if (body.parent_id !== undefined) { out.parent_id = idOf(body.parent_id); if (body.parent_id && !out.parent_id) return 'parent_id is invalid'; }
+  return out;
+}
+async function imageUrl(value) {
+  if (!value || typeof value !== 'string' || !value.startsWith('data:image/')) return value || '';
+  const match = value.match(/^data:image\/([a-z0-9.+-]+);base64,(.+)$/i);
+  if (!match) throw Object.assign(new Error('Invalid image data'), { status: 400 });
+  const ext = match[1].toLowerCase() === 'jpeg' ? 'jpg' : match[1].toLowerCase();
+  const buffer = Buffer.from(match[2], 'base64');
+  if (!buffer.length || buffer.length > 8 * 1024 * 1024) throw Object.assign(new Error('Image is empty or too large'), { status: 400 });
+  const file = `images/${Date.now()}-${crypto.randomBytes(8).toString('hex')}.${ext}`;
+  const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(file, buffer, { contentType: `image/${match[1]}`, upsert: false });
+  if (error) throw Object.assign(new Error(`Image upload failed: ${error.message}`), { status: 502 });
+  return supabase.storage.from(STORAGE_BUCKET).getPublicUrl(file).data.publicUrl;
+}
+async function products() {
+  const { data, error } = await supabase.from('products').select('*').order('id', { ascending: false });
+  if (error) throw error;
+  const rows = data || []; const children = new Map();
+  rows.forEach(row => { if (row.parent_id) { if (!children.has(row.parent_id)) children.set(row.parent_id, []); children.get(row.parent_id).push(row); } });
+  return rows.filter(row => !row.parent_id).map(row => ({ ...row, variants: children.get(row.id) || [] }));
+}
+async function setting(key, value) {
+  const result = await supabase.from('store_settings').upsert({ key, value: typeof value === 'string' ? value : JSON.stringify(value) }, { onConflict: 'key' });
+  if (result.error) throw result.error;
 }
 
-// جلب المنتجات من Supabase
-app.get('/api/products', async (req, res) => {
+app.get('/healthz', (req, res) => res.json({ ok: true }));
+app.get('/api/products', requireDb, async (req, res, next) => { try { res.json(await products()); } catch (e) { next(e); } });
+app.get('/api/store-settings', async (req, res, next) => {
+  if (!supabase) return res.json({ heroImages: [], logoWhite: '', logoDark: '', whatsappNumber: '', homepageText: null });
   try {
-    if (!supabase) return res.status(500).json({ error: 'Supabase is not configured' });
-    const { data, error } = await supabase.from('products').select('*').order('id', { ascending: false });
-    if (error) throw error;
-    res.json(data || []);
-  } catch (err) {
-    console.error('Products fetch error:', err.message);
-    res.status(500).json({ error: 'Unable to load products' });
-  }
+    const { data, error } = await supabase.from('store_settings').select('key,value'); if (error) throw error;
+    const s = Object.fromEntries((data || []).map(x => [x.key, x.value]));
+    const parse = (v, fallback) => { try { return v ? JSON.parse(v) : fallback; } catch (_) { return fallback; } };
+    res.json({ heroImages: parse(s.hero_images, s.hero_image ? [s.hero_image] : []), logoWhite: s.store_logo_white || s.store_logo || '', logoDark: s.store_logo_dark || s.store_logo || '', whatsappNumber: s.whatsapp_link_number || '', homepageText: parse(s.homepage_text, null) });
+  } catch (e) { next(e); }
 });
-
-// إعدادات المتجر
-app.get('/api/store-settings', async (req, res) => {
-  try {
-    if (!supabase) return res.json({ heroImages: [], logoWhite: '', logoDark: '', whatsappNumber: '', homepageText: null });
-    const { data, error } = await supabase.from('store_settings').select('key, value');
-    if (error) throw error;
-    
-    const settings = {};
-    (data || []).forEach(row => { settings[row.key] = row.value; });
-
-    let heroImages = [];
-    try { heroImages = JSON.parse(settings.hero_images || '[]'); } catch (_) {}
-    if (!heroImages.length && settings.hero_image) heroImages = [settings.hero_image];
-
-    let homepageText = null;
-    try { homepageText = JSON.parse(settings.homepage_text || null); } catch (_) {}
-
-    res.json({
-      heroImages,
-      logoWhite: settings.store_logo_white || settings.store_logo || '',
-      logoDark: settings.store_logo_dark || settings.store_logo || '',
-      whatsappNumber: settings.whatsapp_link_number || '',
-      homepageText
-    });
-  } catch (err) {
-    res.status(500).json({ error: 'Unable to load store settings' });
-  }
-});
-
-// تسجيل دخول الأدمن
 app.post('/api/admin/login', (req, res) => {
-  const supplied = req.body && req.body.password;
-  const a = Buffer.from(typeof supplied === 'string' ? supplied : '');
-  const b = Buffer.from(ADMIN_PASSWORD);
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
-    return res.status(401).json({ error: 'Invalid credentials' });
-  }
-  const token = crypto.randomBytes(32).toString('hex');
-  sessions.set(token, { expires: Date.now() + SESSION_TTL });
-  res.setHeader('Set-Cookie', `admin_session=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${SESSION_TTL / 1000}${COOKIE_SECURE ? '; Secure' : ''}`);
+  if (!ADMIN_PASSWORD) return fail(res, 503, 'Admin password is not configured');
+  const supplied = text(req.body && req.body.password);
+  const a = Buffer.from(supplied), b = Buffer.from(ADMIN_PASSWORD);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return fail(res, 401, 'Invalid credentials');
+  const token = crypto.randomBytes(32).toString('hex'); sessions.set(token, { expires: Date.now() + SESSION_TTL });
+  res.setHeader('Set-Cookie', `admin_session=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${SESSION_TTL / 1000}${process.env.COOKIE_SECURE === 'true' ? '; Secure' : ''}`);
   res.json({ success: true });
 });
-
-app.get('/api/admin/products', adminOnly, async (req, res) => {
-  try {
-    const { data, error } = await supabase.from('products').select('*').order('id', { ascending: false });
-    if (error) throw error;
-    res.json(data || []);
-  } catch (_) {
-    res.status(500).json({ error: 'Unable to load admin products' });
-  }
+app.get('/api/admin/products', adminOnly, requireDb, async (req, res, next) => { try { res.json(await products()); } catch (e) { next(e); } });
+app.post('/api/admin/products', adminOnly, requireDb, async (req, res, next) => {
+  try { const v = validateProduct(req.body || {}); if (typeof v === 'string') return fail(res, 400, v); v.image = await imageUrl(req.body.image); const { data, error } = await supabase.from('products').insert(v).select().single(); if (error) throw error; res.status(201).json({ success: true, id: data.id, product: data }); } catch (e) { next(e); }
 });
-
-app.post('/api/admin/products', adminOnly, async (req, res) => {
-  const { name, category = '', price, image, description = '', size = '', color = '', stock = 0 } = req.body || {};
-  try {
-    const storedImage = saveImage(image);
-    const { data, error } = await supabase.from('products').insert([{
-      name: name.trim(),
-      category: category.trim(),
-      price: Number(price),
-      image: storedImage,
-      description: description.trim(),
-      size: size.trim(),
-      color: color.trim(),
-      stock: Number(stock)
-    }]).select();
-    if (error) throw error;
-    res.status(201).json({ success: true, id: data?.[0]?.id });
-  } catch (err) {
-    res.status(500).json({ error: 'Unable to create product' });
-  }
+app.put('/api/admin/products/:id', adminOnly, requireDb, async (req, res, next) => {
+  try { const id = idOf(req.params.id); if (!id) return fail(res, 400, 'Invalid product id'); const v = validateProduct(req.body || {}, true); if (typeof v === 'string') return fail(res, 400, v); if (req.body.image !== undefined) v.image = await imageUrl(req.body.image); const { data, error } = await supabase.from('products').update(v).eq('id', id).select().single(); if (error) throw error; if (!data) return fail(res, 404, 'Product not found'); res.json({ success: true, product: data }); } catch (e) { next(e); }
 });
-
-app.delete('/api/admin/products/:id', adminOnly, async (req, res) => {
+app.delete('/api/admin/products/:id', adminOnly, requireDb, async (req, res, next) => {
   try {
-    const { error } = await supabase.from('products').delete().eq('id', Number(req.params.id));
+    const id = idOf(req.params.id);
+    if (!id) return fail(res, 400, 'Invalid product id');
+    const children = await supabase.from('products').delete().eq('parent_id', id);
+    if (children.error) throw children.error;
+    const { error } = await supabase.from('products').delete().eq('id', id);
     if (error) throw error;
     res.json({ success: true });
-  } catch (_) {
-    res.status(500).json({ error: 'Unable to delete product' });
-  }
+  } catch (e) { next(e); }
 });
-
-app.get('/api/admin/orders', adminOnly, async (req, res) => {
+app.patch('/api/admin/products/:id/stock', adminOnly, requireDb, async (req, res, next) => { try { const id = idOf(req.params.id), stock = Number(req.body && req.body.stock); if (!id || !Number.isInteger(stock) || stock < 0) return fail(res, 400, 'stock must be a non-negative integer'); const { data, error } = await supabase.from('products').update({ stock }).eq('id', id).select().single(); if (error) throw error; res.json({ success: true, product: data }); } catch (e) { next(e); } });
+app.post('/api/admin/products/:id/variants', adminOnly, requireDb, async (req, res, next) => {
   try {
-    const { data, error } = await supabase.from('orders').select('*').order('id', { ascending: false });
+    const parent = idOf(req.params.id);
+    if (!parent) return fail(res, 400, 'Invalid parent product id');
+    const { data: parentRow, error: parentError } = await supabase.from('products').select('price,category,description').eq('id', parent).is('parent_id', null).single();
+    if (parentError || !parentRow) return fail(res, 404, 'Parent product not found');
+    const v = validateProduct({
+      ...req.body,
+      name: req.body.name || req.body.variantName || 'Variant',
+      price: req.body.price ?? parentRow.price,
+      category: req.body.category ?? parentRow.category,
+      description: req.body.description ?? parentRow.description,
+      parent_id: parent
+    });
+    if (typeof v === 'string') return fail(res, 400, v);
+    v.image = await imageUrl(req.body.image);
+    const { data, error } = await supabase.from('products').insert(v).select().single();
     if (error) throw error;
-    res.json(data || []);
-  } catch (_) {
-    res.status(500).json({ error: 'Unable to load orders' });
-  }
+    res.status(201).json({ success: true, variant: data });
+  } catch (e) { next(e); }
 });
 
-app.delete('/api/admin/orders/clear', adminOnly, async (req, res) => {
+app.post('/api/checkout', requireDb, async (req, res, next) => {
   try {
-    await supabase.from('order_items').delete().neq('id', 0);
-    await supabase.from('orders').delete().neq('id', 0);
-    res.json({ success: true, message: 'تم تصفير جميع الطلبات بنجاح' });
-  } catch (_) {
-    res.status(500).json({ error: 'حدث خطأ أثناء محاولة تصفير الطلبات' });
+    const { customerName, phone, location, cart } = req.body || {};
+    if (!text(customerName) || !text(phone) || !text(location) || !Array.isArray(cart) || !cart.length) return fail(res, 400, 'customerName, phone, location and cart are required');
+    const requested = new Map(); cart.forEach(i => { const id = idOf(i.id), q = Number(i.quantity); if (id && Number.isInteger(q) && q > 0) requested.set(id, (requested.get(id) || 0) + q); });
+    if (requested.size !== cart.length) return fail(res, 400, 'Invalid cart item');
+    const ids = [...requested.keys()]; const { data: rows, error } = await supabase.from('products').select('*').in('id', ids); if (error) throw error;
+    if (!rows || rows.length !== ids.length) return fail(res, 400, 'One or more products no longer exist');
+    for (const row of rows) if (Number(row.stock || 0) < requested.get(row.id)) return fail(res, 409, `Insufficient stock for ${row.name}`);
+    const items = rows.map(row => ({ product_id: row.id, product_name: row.name, quantity: requested.get(row.id), price: Number(row.price) }));
+    const total = items.reduce((n, x) => n + x.price * x.quantity, 0);
+    const { data: order, error: orderError } = await supabase.from('orders').insert({ customer_name: text(customerName), phone: text(phone), location: text(location), total, status: 'new' }).select().single(); if (orderError) throw orderError;
+    const { error: itemError } = await supabase.from('order_items').insert(items.map(x => ({ order_id: order.id, ...x }))); if (itemError) { await supabase.from('orders').delete().eq('id', order.id); throw itemError; }
+    const updated = [];
+    for (const row of rows) {
+      const quantity = requested.get(row.id);
+      const update = await supabase.from('products').update({ stock: Number(row.stock || 0) - quantity }).eq('id', row.id).gte('stock', quantity).select('id');
+      if (update.error || !update.data || !update.data.length) {
+        for (const prior of updated) await supabase.from('products').update({ stock: prior.stock }).eq('id', prior.id);
+        await supabase.from('order_items').delete().eq('order_id', order.id);
+        await supabase.from('orders').delete().eq('id', order.id);
+        return fail(res, 409, 'Stock changed; please retry checkout');
+      }
+      updated.push({ id: row.id, stock: Number(row.stock || 0) });
+    }
+    res.status(201).json({ success: true, orderId: order.id, total });
+  } catch (e) { next(e); }
+});
+app.get('/api/admin/orders', adminOnly, requireDb, async (req, res, next) => { try { const { data, error } = await supabase.from('orders').select('*, order_items(*)').order('id', { ascending: false }); if (error) throw error; res.json(data || []); } catch (e) { next(e); } });
+app.patch('/api/admin/orders/:id', adminOnly, requireDb, async (req, res, next) => { try { const id = idOf(req.params.id), status = text(req.body && req.body.status); if (!id || !['new', 'confirmed', 'shipped', 'cancelled'].includes(status)) return fail(res, 400, 'Invalid order status'); const { data, error } = await supabase.from('orders').update({ status }).eq('id', id).select().single(); if (error) throw error; res.json({ success: true, order: data }); } catch (e) { next(e); } });
+app.delete('/api/admin/orders/clear', adminOnly, requireDb, async (req, res, next) => { try { const items = await supabase.from('order_items').delete().gt('id', 0); if (items.error) throw items.error; const orders = await supabase.from('orders').delete().gt('id', 0); if (orders.error) throw orders.error; res.json({ success: true }); } catch (e) { next(e); } });
+app.delete('/api/admin/orders/:id', adminOnly, requireDb, async (req, res, next) => { try { const id = idOf(req.params.id); if (!id) return fail(res, 400, 'Invalid order id'); await supabase.from('order_items').delete().eq('order_id', id); const { error } = await supabase.from('orders').delete().eq('id', id); if (error) throw error; res.json({ success: true }); } catch (e) { next(e); } });
+
+const settingRoutes = {
+  logo: async b => {
+    const logoWhite = b.whiteImage !== undefined ? await imageUrl(b.whiteImage) : undefined;
+    const logoDark = b.darkImage !== undefined ? await imageUrl(b.darkImage) : undefined;
+    if (logoWhite !== undefined) await setting('store_logo_white', logoWhite);
+    if (logoDark !== undefined) await setting('store_logo_dark', logoDark);
+    return {
+      logoWhite,
+      logoDark
+    };
+  },
+  whatsapp: async b => {
+    const whatsappNumber = text(b.number).replace(/\D/g, '');
+    await setting('whatsapp_link_number', whatsappNumber);
+    return { whatsappNumber };
+  },
+  hero: async b => {
+    const heroImages = await Promise.all((Array.isArray(b.images) ? b.images : []).map(imageUrl));
+    await setting('hero_images', heroImages);
+    return { heroImages };
+  },
+  homepage: async b => {
+    const homepageText = b.content || {};
+    await setting('homepage_text', homepageText);
+    return { homepageText };
   }
+};
+for (const [name, save] of Object.entries(settingRoutes)) app.put(`/api/admin/store-settings/${name}`, adminOnly, requireDb, async (req, res, next) => {
+  try { res.json({ success: true, ...(await save(req.body || {})) }); } catch (e) { next(e); }
 });
 
-// توجيه الملفات الثابتة للواجهة
-app.use(express.static(path.join(__dirname, '..')));
-app.get(/(.*)/, (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'index.html'));
-});
-
-if (require.main === module) {
-  app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
-}
+app.use('/assets/fonts', express.static(path.join(__dirname, 'assets')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, '..', 'index.html')));
+app.get(/(.*)/, (req, res) => res.sendFile(path.join(__dirname, '..', 'index.html')));
+app.use((err, req, res, next) => { console.error(err); fail(res, err.status || 500, err.status ? err.message : 'Internal server error'); });
+if (require.main === module) app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
 module.exports = app;
