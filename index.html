@@ -1379,7 +1379,7 @@
                     return [...parents.values()];
                 },
 
-                processImage(file, maxDimension = 1600, quality = 0.9, type = 'image/webp') {
+                processImage(file, maxDimension = 1200, quality = 0.85, type = 'image/webp') {
                     return new Promise((resolve, reject) => {
                         const reader = new FileReader();
                         reader.onerror = () => reject(new Error('تعذر تحميل الصورة'));
@@ -1443,7 +1443,7 @@
                             canvas.width = Math.max(1, Math.round(img.width * scale));
                             canvas.height = Math.max(1, Math.round(img.height * scale));
                             canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-                            this.heroUploads[index] = canvas.toDataURL('image/webp', 0.9);
+                            this.heroUploads[index] = canvas.toDataURL('image/webp', 0.85);
                             this.isCompressing = false;
                         };
                         img.onerror = () => { this.isCompressing = false; alert('تعذر قراءة الصورة'); };
@@ -1579,14 +1579,14 @@
                         const img = new Image();
                         img.onload = () => {
                             const canvas = document.createElement('canvas');
-                            const scale = Math.min(1, 1600 / Math.max(img.width, img.height));
+                            const scale = Math.min(1, 1200 / Math.max(img.width, img.height));
                             canvas.width = Math.max(1, Math.round(img.width * scale));
                             canvas.height = Math.max(1, Math.round(img.height * scale));
                             const context = canvas.getContext('2d');
                             context.imageSmoothingEnabled = true;
                             context.imageSmoothingQuality = 'high';
                             context.drawImage(img, 0, 0, canvas.width, canvas.height);
-                            this.editingProduct.image = canvas.toDataURL('image/webp', 0.9);
+                            this.editingProduct.image = canvas.toDataURL('image/webp', 0.85);
                             this.isCompressing = false;
                         };
                         img.src = e.target.result;
