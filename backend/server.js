@@ -73,7 +73,7 @@ app.use(express.json({ limit: '8mb', strict: true }));
 function cookieToken(req) {
   const cookieHeader = req.get('cookie') || '';
   const match = cookieHeader.match(/(?:^|;\s*)admin_session=([^;]+)/);
-  return match ? match : null;
+  return match ? match[1] : null; // تم التصحيح هنا لإرجاع القيمة النصية للتوكن مباشرة
 }
 function adminOnly(req, res, next) {
   const token = cookieToken(req);
