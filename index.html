@@ -389,8 +389,11 @@
                 <span x-show="!activeLogoImage()" class="gold-accent font-extrabold">STORE</span><span x-show="!activeLogoImage()" class="font-extrabold">ZALLOUM</span>
             </a>
             <div class="flex-1 max-w-md relative order-2">
-                <input type="search" name="store-search" x-model="searchQuery" @keydown.enter.prevent="tryHiddenDashboard()" @keyup.enter.prevent="tryHiddenDashboard()" onkeydown="if(event.key === 'Enter') window.loginOwnerFromSearch(event)" :placeholder="t('search')"
+                <input type="search" name="store-search" x-model="searchQuery" @keydown.enter.prevent="focusSearchResults()" :placeholder="t('search')"
                     class="w-full bg-[#1A1A1A] text-sm text-white placeholder-gray-400 px-4 py-2.5 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D4AF37] border border-gray-800 transition text-right">
+                <button x-show="searchQuery" type="button" @click="searchQuery = ''" class="absolute inset-y-0 left-0 px-3 text-gray-400 hover:text-[#D4AF37]" :aria-label="t('clearSearch')" :title="t('clearSearch')" style="display:none">
+                <i class="fa-solid fa-xmark"></i>
+                </button>
                 <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
                     <i class="fa-solid fa-magnifying-glass"></i>
                 </span>
@@ -444,6 +447,10 @@
                         <template x-for="(image, index) in (heroImages.length ? heroImages : [defaultHeroImage])" :key="image + '-' + index">
                             <img x-show="heroIndex === index" x-transition:enter="transition-opacity duration-700 ease-out" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity duration-700 ease-in" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" :src="assetUrl(image)" alt="Hero Sneaker" class="absolute inset-0 w-full h-full object-cover">
                         </template>
+                    </div>
+                    <div x-show="products.length && !filteredProducts().length" class="text-center text-gray-500 py-10" style="display:none">
+                        <i class="fa-solid fa-magnifying-glass text-2xl mb-3"></i>
+                        <p class="font-bold" x-text="t('noSearchResults')"></p>
                     </div>
                 </div>
             </div>
@@ -888,7 +895,9 @@
                 chooseColor: 'اختر اللون',
                 product: 'منتج',
                 supportedBy: 'مدعوم ومصمم بواسطة',
-                copyright: 'كل الحقوق محفوظة 2026 © ZALLOUM STORE'
+                copyright: 'كل الحقوق محفوظة 2026 © ZALLOUM STORE',
+                noSearchResults: 'لا توجد منتجات مطابقة للبحث',
+                clearSearch: 'مسح البحث'
             },
             he: {
                 all: 'הכל',
@@ -910,7 +919,9 @@
                 chooseColor: 'בחר צבע',
                 product: 'מוצר',
                 supportedBy: 'נתמך ועוצב על ידי',
-                copyright: 'כל הזכויות שמורות 2026 © ZALLOUM STORE'
+                copyright: 'כל הזכויות שמורות 2026 © ZALLOUM STORE',
+                noSearchResults: 'לא נמצאו מוצרים תואמים',
+                clearSearch: 'נקה חיפוש'
             }
         },
         searchQuery: '',
@@ -1155,9 +1166,41 @@
                 visibleCategories() {
                     return this.activeCategory === 'الكل' ? this.categories() : [this.activeCategory];
                 },
+                normalizeSearch(value) {
+                    return String(value ?? '')
+                        .toLocaleLowerCase('ar')
+                        .normalize('NFKC')
+                        .replace(/[إأآ]/g, 'ا')
+                        .replace(/ة/g, 'ه')
+                        .replace(/\s+/g, ' ')
+                        .trim();
+                },
+                productMatchesSearch(product, query) {
+                    const fields = [
+                        product.name,
+                        product.category,
+                        product.description,
+                        product.size,
+                        product.color,
+                        ...(Array.isArray(product.variants) ? product.variants.flatMap(variant => [
+                            variant.size,
+                            variant.color,
+                            variant.name,
+                            variant.description
+                        ]) : [])
+                    ];
+                    return fields.some(field => this.normalizeSearch(field).includes(query));
+                },
                 filteredProducts() {
-                    if (this.activeCategory === 'الكل') return this.products;
-                    return this.productsForCategory(this.activeCategory);
+                    const categoryProducts = this.activeCategory === 'الكل'
+                        ? this.products
+                        : this.productsForCategory(this.activeCategory);
+                    const query = this.normalizeSearch(this.searchQuery);
+                    if (!query) return categoryProducts;
+                    return categoryProducts.filter(product => this.productMatchesSearch(product, query));
+                },
+                focusSearchResults() {
+                    document.getElementById('products')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 },
                 uniqueCarouselProducts() {
                     const seenImages = new Set();
