@@ -468,7 +468,7 @@
                             </template>
                         </div>
                     </div>
-<button @click="saveLogoImages" :disabled="(!logoWhiteUpload && !logoDarkUpload) || isCompressing" class="mt-4 gold-bg disabled:bg-gray-300 disabled:text-gray-500 text-black font-bold px-6 py-3 rounded-xl">حفظ الشعار</button>
+<button @click="saveLogoImages" :disabled="(!this.logoWhiteUpload && !this.logoDarkUpload) || isCompressing" class="mt-4 gold-bg disabled:bg-gray-300 disabled:text-gray-500 text-black font-bold px-6 py-3 rounded-xl">حفظ الشعار</button>
 
                     <div x-show="productColors(selectedProduct).length" class="mb-3">
                         <p class="text-gray-700 font-bold mb-2">اختر اللون</p>
@@ -538,7 +538,7 @@
             </div>
             <p class="text-xs text-gray-500 mt-4">ارفع النسختين ليبقى الشعار واضحًا عند تبديل الثيم. يمكن حفظ كل نسخة بشكل مستقل.</p>
             <div class="mt-4">
-    <button @click="saveLogoImages" :disabled="(!logoWhiteUpload && !logoDarkUpload) || isCompressing" class="gold-bg disabled:bg-gray-300 disabled:text-gray-500 text-black font-bold px-6 py-3 rounded-xl w-full">حفظ الشعار</button>
+    <button @click="saveLogoImages" :disabled="(!this.logoWhiteUpload && !this.logoDarkUpload) || isCompressing" class="gold-bg disabled:bg-gray-300 disabled:text-gray-500 text-black font-bold px-6 py-3 rounded-xl w-full">حفظ الشعار</button>
 </div>
         <div class="lg:col-span-3 bg-white rounded-2xl p-6 border border-[#D4AF37] shadow-sm">
             <h3 class="text-lg font-bold text-[#121212]">رقم واتساب للتواصل</h3>
@@ -617,7 +617,7 @@
                             <button @click="deleteProduct(group)" class="text-red-600 p-2" title="حذف المنتج وفروعه"><i class="fa-solid fa-trash"></i></button>
                         </div>
                         <p class="text-xs text-gray-500 mt-4">ارفع النسختين ليبقى الشعار واضحًا عند تبديل الثيم. يمكن حفظ كل نسخة بشكل مستقل.</p>
-            <button @click="saveLogoImages" :disabled="(!logoWhiteUpload && !logoDarkUpload) || isCompressing" class="mt-4 gold-bg disabled:bg-gray-300 disabled:text-gray-500 text-black font-bold px-6 py-3 rounded-xl w-full">حفظ الشعار</button>
+            <button @click="saveLogoImages" :disabled="(!this.logoWhiteUpload && !this.logoDarkUpload) || isCompressing" class="mt-4 gold-bg disabled:bg-gray-300 disabled:text-gray-500 text-black font-bold px-6 py-3 rounded-xl w-full">حفظ الشعار</button>
         </div>
                         <div class="mr-5 border-r-2 border-[#D4AF37] pr-3 space-y-2">
                             <template x-for="variant in group.variants" :key="variant.id">
@@ -1244,7 +1244,7 @@
                 },
 
                 async saveLogoImages() {
-                    if (logoWhiteUpload && !this.logoDarkUpload) return;
+                    if (this.logoWhiteUpload && !this.logoDarkUpload) return;
                     const response = await fetch(`${this.apiUrl}/admin/store-settings/logo`, {
                         method: 'PUT',
                         credentials: 'include',
