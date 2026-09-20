@@ -389,7 +389,7 @@
                 <span x-show="!activeLogoImage()" class="gold-accent font-extrabold">STORE</span><span x-show="!activeLogoImage()" class="font-extrabold">ZALLOUM</span>
             </a>
             <div class="flex-1 max-w-md relative order-2">
-                <input type="text" x-model="searchQuery" @keydown.enter.prevent="tryHiddenDashboard()" @keyup.enter.prevent="tryHiddenDashboard()" onkeydown="if(event.key === 'Enter') window.loginOwnerFromSearch(event)" :placeholder="t('search')" 
+                <input type="search" name="store-search" x-model="searchQuery" @keydown.enter.prevent="tryHiddenDashboard()" @keyup.enter.prevent="tryHiddenDashboard()" onkeydown="if(event.key === 'Enter') window.loginOwnerFromSearch(event)" :placeholder="t('search')"
                     class="w-full bg-[#1A1A1A] text-sm text-white placeholder-gray-400 px-4 py-2.5 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D4AF37] border border-gray-800 transition text-right">
                 <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
                     <i class="fa-solid fa-magnifying-glass"></i>
@@ -432,7 +432,7 @@
                     <div x-show="adminLoginOpen" class="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-6" style="display:none">
                         <form @submit.prevent="login" class="bg-white rounded-2xl p-6 w-full max-w-sm space-y-4 text-right">
                             <h2 class="text-xl font-bold">دخول لوحة المالك</h2>
-                            <input type="password" x-model="loginPassword" placeholder="كلمة المرور" class="w-full border rounded-xl p-3" required autofocus>
+                            <input type="password" name="admin-password" autocomplete="current-password" x-model="loginPassword" placeholder="كلمة المرور" class="w-full border rounded-xl p-3" required autofocus>
                             <p x-show="loginError" class="text-red-600 text-sm" x-text="loginError"></p>
                             <div class="flex gap-3"><button class="flex-1 gold-bg text-black font-bold rounded-xl p-3">دخول</button><button type="button" @click="adminLoginOpen=false" class="flex-1 bg-gray-100 rounded-xl p-3">إلغاء</button></div>
                         </form>
@@ -613,14 +613,14 @@
                         <img :src="assetUrl(logoWhiteUpload || logoWhite || defaultWhiteLogoPreview)" alt="معاينة الشعار الأبيض" class="max-w-full max-h-full object-contain">
                     </div>
                     <label class="block text-sm font-bold text-gray-700">الشعار الأبيض للوضع الداكن</label>
-                    <input type="file" @change="compressLogoImage($event, 'white')" accept="image/png,image/jpeg,image/webp,image/gif" class="w-full bg-gray-50 border border-gray-200 p-2.5 rounded-xl">
+                    <input type="file" name="logo-white" @change="compressLogoImage($event, 'white')" accept="image/png,image/jpeg,image/webp,image/gif" class="w-full bg-gray-50 border border-gray-200 p-2.5 rounded-xl">
                 </div>
                 <div class="space-y-3">
                     <div class="rounded-2xl overflow-hidden bg-white aspect-video border border-gray-200 flex items-center justify-center p-4">
                         <img :src="assetUrl(logoDarkUpload || logoDark || defaultLogoPreview)" alt="معاينة الشعار الأسود أو الملون" class="max-w-full max-h-full object-contain">
                     </div>
                     <label class="block text-sm font-bold text-gray-700">الشعار الأسود أو الملون للوضع الفاتح</label>
-                    <input type="file" @change="compressLogoImage($event, 'dark')" accept="image/png,image/jpeg,image/webp,image/gif" class="w-full bg-gray-50 border border-gray-200 p-2.5 rounded-xl">
+                    <input type="file" name="logo-dark" @change="compressLogoImage($event, 'dark')" accept="image/png,image/jpeg,image/webp,image/gif" class="w-full bg-gray-50 border border-gray-200 p-2.5 rounded-xl">
                 </div>
             </div>
             <p class="text-xs text-gray-500 mt-4">ارفع النسختين ليبقى الشعار واضحًا عند تبديل الثيم. يمكن حفظ كل نسخة بشكل مستقل.</p>
@@ -632,7 +632,7 @@
             <h3 class="text-lg font-bold text-[#121212]">رقم واتساب للتواصل</h3>
             <p class="text-sm text-gray-500 mt-1 mb-4">اكتب الرقم بصيغة دولية بدون علامة +، وسيظهر رابط الدردشة في الفوتر.</p>
             <div class="flex flex-col sm:flex-row gap-3">
-                <input type="tel" x-model="whatsappNumber" inputmode="numeric" placeholder="مثال: 970599000000" class="flex-1 bg-gray-50 border border-gray-200 p-3 rounded-xl text-left number" dir="ltr">
+                <input type="tel" name="whatsapp-number" x-model="whatsappNumber" inputmode="numeric" placeholder="مثال: 970599000000" class="flex-1 bg-gray-50 border border-gray-200 p-3 rounded-xl text-left number" dir="ltr">
                 <button @click="saveWhatsappNumber" :disabled="!whatsappNumber" class="gold-bg disabled:bg-gray-300 disabled:text-gray-500 text-black font-bold px-6 py-3 rounded-xl">حفظ رقم واتساب</button>
             </div>
         </div>
@@ -651,7 +651,7 @@
                             <img :src="assetUrl(upload || heroImages[index] || defaultHeroImage)" :alt="'معاينة صورة الهيرو ' + (index + 1)" class="w-full h-full object-cover">
                         </div>
                         <label class="block text-sm font-bold text-gray-700" x-text="'الصورة ' + (index + 1)"></label>
-                        <input type="file" @change="compressHeroImage($event, index)" accept="image/png,image/jpeg,image/webp,image/gif" class="w-full bg-gray-50 border border-gray-200 p-2.5 rounded-xl">
+                        <input type="file" name="hero-image" @change="compressHeroImage($event, index)" accept="image/png,image/jpeg,image/webp,image/gif" class="w-full bg-gray-50 border border-gray-200 p-2.5 rounded-xl">
                     </div>
                 </template>
             </div>
@@ -669,12 +669,12 @@
                 <template x-for="languageOption in ['ar', 'he']" :key="'homepage-' + languageOption">
                     <div class="space-y-3" :dir="languageOption === 'he' ? 'ltr' : 'rtl'">
                         <h4 class="font-bold" x-text="languageOption === 'ar' ? 'العربية' : 'עברית'"></h4>
-                        <input x-model="homepageText[languageOption].season" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl" placeholder="النص الصغير">
-                        <input x-model="homepageText[languageOption].heroTitle" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl" placeholder="عنوان الهيرو">
-                        <input x-model="homepageText[languageOption].styleComfort" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl" placeholder="الكلمة الذهبية">
-                        <textarea x-model="homepageText[languageOption].heroDescription" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl" rows="3" placeholder="وصف الهيرو"></textarea>
-                        <input x-model="homepageText[languageOption].shopNow" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl" placeholder="زر التسوق">
-                        <input x-model="homepageText[languageOption].storeProducts" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl" placeholder="عنوان شريط المنتجات">
+                        <input name="homepage-season" x-model="homepageText[languageOption].season" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl" placeholder="النص الصغير">
+                        <input name="homepage-title" x-model="homepageText[languageOption].heroTitle" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl" placeholder="عنوان الهيرو">
+                        <input name="homepage-style" x-model="homepageText[languageOption].styleComfort" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl" placeholder="الكلمة الذهبية">
+                        <textarea name="homepage-description" x-model="homepageText[languageOption].heroDescription" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl" rows="3" placeholder="وصف الهيرو"></textarea>
+                        <input name="homepage-shop-button" x-model="homepageText[languageOption].shopNow" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl" placeholder="زر التسوق">
+                        <input name="homepage-products-title" x-model="homepageText[languageOption].storeProducts" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl" placeholder="عنوان شريط المنتجات">
                     </div>
                 </template>
             </div>
@@ -682,12 +682,12 @@
         <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
             <h3 class="text-lg font-bold mb-4 text-[#121212]">إضافة منتج للمخزون</h3>
             <form @submit.prevent="addProduct" class="space-y-4">
-                <input type="text" x-model="newProduct.name" placeholder="اسم المنتج" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right" required>
-                <input type="text" x-model="newProduct.category" placeholder="القسم" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right" required>
-                <input type="number" min="0" x-model.number="newProduct.original_price" placeholder="السعر قبل الخصم" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right" required>
-                <input type="number" min="0" x-model.number="newProduct.sale_price" placeholder="السعر بعد الخصم" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right" required>
-                <input type="file" @change="compressImage($event)" accept="image/*" class="w-full bg-gray-50 border border-gray-200 p-2.5 rounded-xl text-right" required>
-                <textarea x-model="newProduct.description" placeholder="الوصف" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right"></textarea>
+                <input type="text" name="product-name" x-model="newProduct.name" placeholder="اسم المنتج" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right" required>
+                <input type="text" name="product-category" x-model="newProduct.category" placeholder="القسم" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right" required>
+                <input type="number" name="product-original-price" min="0" x-model.number="newProduct.original_price" placeholder="السعر قبل الخصم" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right" required>
+                <input type="number" name="product-sale-price" min="0" x-model.number="newProduct.sale_price" placeholder="السعر بعد الخصم" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right" required>
+                <input type="file" name="product-image" @change="compressImage($event)" accept="image/*" class="w-full bg-gray-50 border border-gray-200 p-2.5 rounded-xl text-right" required>
+                <textarea name="product-description" x-model="newProduct.description" placeholder="الوصف" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right"></textarea>
                 <p class="text-xs text-gray-500">أضف المنتج الرئيسي أولًا، ثم استخدم «إضافة نمرة/لون» لإضافة كل فرع مع صورته وكميته.</p>
                 <button type="submit" class="w-full gold-bg text-black font-bold py-3 rounded-xl">حفظ المنتج الرئيسي</button>
             </form>
@@ -727,10 +727,10 @@
                 <button @click="variantParent = null" class="text-gray-500 p-2"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <form @submit.prevent="addVariant" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <input type="text" x-model="newVariant.size" placeholder="النمرة / المقاس" class="border rounded-xl p-3" required maxlength="40">
-                <input type="text" x-model="newVariant.color" placeholder="اللون" class="border rounded-xl p-3" required maxlength="60">
-                <input type="number" min="0" x-model.number="newVariant.stock" placeholder="الكمية" class="border rounded-xl p-3" required>
-                <input type="file" @change="compressVariantImage($event)" accept="image/*" class="border rounded-xl p-2.5" required>
+                <input type="text" name="variant-size" x-model="newVariant.size" placeholder="النمرة / المقاس" class="border rounded-xl p-3" required maxlength="40">
+                <input type="text" name="variant-color" x-model="newVariant.color" placeholder="اللون" class="border rounded-xl p-3" required maxlength="60">
+                <input type="number" name="variant-stock" min="0" x-model.number="newVariant.stock" placeholder="الكمية" class="border rounded-xl p-3" required>
+                <input type="file" name="variant-image" @change="compressVariantImage($event)" accept="image/*" class="border rounded-xl p-2.5" required>
                 <button type="submit" class="gold-bg text-black font-bold py-3 rounded-xl sm:col-span-2 lg:col-span-4">حفظ الفرع</button>
             </form>
         </div>
@@ -740,15 +740,15 @@
                 <button @click="editingProduct = emptyProduct()" class="text-gray-500 p-2"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <form @submit.prevent="saveProduct" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <input type="text" x-model="editingProduct.name" placeholder="اسم المنتج" class="border rounded-xl p-3" required>
-                <input type="text" x-model="editingProduct.category" placeholder="القسم" class="border rounded-xl p-3" required>
-                <input type="number" min="0" x-model.number="editingProduct.original_price" placeholder="السعر قبل الخصم" class="border rounded-xl p-3" required>
-                <input type="number" min="0" x-model.number="editingProduct.sale_price" placeholder="السعر بعد الخصم" class="border rounded-xl p-3" required>
-                <input type="text" x-model="editingProduct.size" placeholder="النمرة / المقاس (مثال: 42)" class="border rounded-xl p-3" maxlength="40">
-                <input type="text" x-model="editingProduct.color" placeholder="اللون" class="border rounded-xl p-3" maxlength="60">
-                <input type="number" min="0" x-model.number="editingProduct.stock" placeholder="الكمية للمخزون" class="border rounded-xl p-3" required>
-                <input type="file" @change="compressEditImage($event)" accept="image/*" class="border rounded-xl p-2.5">
-                <textarea x-model="editingProduct.description" placeholder="الوصف" class="border rounded-xl p-3 sm:col-span-2 lg:col-span-3"></textarea>
+                <input type="text" name="edit-product-name" x-model="editingProduct.name" placeholder="اسم المنتج" class="border rounded-xl p-3" required>
+                <input type="text" name="edit-product-category" x-model="editingProduct.category" placeholder="القسم" class="border rounded-xl p-3" required>
+                <input type="number" name="edit-product-original-price" min="0" x-model.number="editingProduct.original_price" placeholder="السعر قبل الخصم" class="border rounded-xl p-3" required>
+                <input type="number" name="edit-product-sale-price" min="0" x-model.number="editingProduct.sale_price" placeholder="السعر بعد الخصم" class="border rounded-xl p-3" required>
+                <input type="text" name="edit-product-size" x-model="editingProduct.size" placeholder="النمرة / المقاس (مثال: 42)" class="border rounded-xl p-3" maxlength="40">
+                <input type="text" name="edit-product-color" x-model="editingProduct.color" placeholder="اللون" class="border rounded-xl p-3" maxlength="60">
+                <input type="number" name="edit-product-stock" min="0" x-model.number="editingProduct.stock" placeholder="الكمية للمخزون" class="border rounded-xl p-3" required>
+                <input type="file" name="edit-product-image" @change="compressEditImage($event)" accept="image/*" class="border rounded-xl p-2.5">
+                <textarea name="edit-product-description" x-model="editingProduct.description" placeholder="الوصف" class="border rounded-xl p-3 sm:col-span-2 lg:col-span-3"></textarea>
                 <button type="submit" class="gold-bg text-black font-bold py-3 rounded-xl sm:col-span-2 lg:col-span-3">حفظ تعديلات المنتج</button>
             </form>
         </div>
@@ -758,7 +758,7 @@
             <button type="button" @click="clearOrders()" :disabled="!orders.length" class="text-red-600 border border-red-200 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed px-3 py-2 rounded-lg text-sm font-bold">تصفير الطلبات</button>
             </div>
             <div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b"><th class="p-2">العميل</th><th class="p-2">الهاتف</th><th class="p-2">الموقع</th><th class="p-2">الإجمالي</th><th class="p-2">تاريخ الطلب</th><th class="p-2">الحالة</th></tr></thead>
-                <tbody><template x-for="order in orders" :key="order.id"><tr class="border-b"><td class="p-2" x-text="order.customer_name"></td><td class="p-2 number" x-text="order.phone"></td><td class="p-2" x-text="order.location"></td><td class="p-2 number" x-text="'₪ ' + toEnglishNumber(order.total)"></td><td class="p-2 whitespace-nowrap number" dir="ltr" x-text="formatOrderDate(order.created_at)"></td><td class="p-2"><select :value="order.status" @change="updateOrderStatus(order, $event.target.value)" class="border rounded p-1"><option value="new">جديد</option><option value="confirmed">مؤكد</option><option value="shipped">تم الشحن</option><option value="cancelled">ملغى</option></select></td><td class="p-2"><button @click="deleteOrder(order)" class="text-red-600 hover:bg-red-50 rounded-lg p-2" title="حذف الطلب"><i class="fa-solid fa-trash"></i></button></td></tr></template></tbody>
+                <tbody><template x-for="order in orders" :key="order.id"><tr class="border-b"><td class="p-2" x-text="order.customer_name"></td><td class="p-2 number" x-text="order.phone"></td><td class="p-2" x-text="order.location"></td><td class="p-2 number" x-text="'₪ ' + toEnglishNumber(order.total)"></td><td class="p-2 whitespace-nowrap number" dir="ltr" x-text="formatOrderDate(order.created_at)"></td><td class="p-2"><select name="order-status" :value="order.status" @change="updateOrderStatus(order, $event.target.value)" class="border rounded p-1"><option value="new">جديد</option><option value="confirmed">مؤكد</option><option value="shipped">تم الشحن</option><option value="cancelled">ملغى</option></select></td><td class="p-2"><button @click="deleteOrder(order)" class="text-red-600 hover:bg-red-50 rounded-lg p-2" title="حذف الطلب"><i class="fa-solid fa-trash"></i></button></td></tr></template></tbody>
             </table></div>
         </div>
         </div>
@@ -791,9 +791,9 @@
             </div>
             <div class="mt-4 space-y-3 border-t border-gray-200 pt-4">
                 <div class="flex justify-between font-black"><span data-i18n="total">المجموع</span><span class="gold-accent number" x-text="'₪ ' + toEnglishNumber(cart.reduce((sum, item) => sum + item.price * item.quantity, 0))"></span></div>
-                <input type="text" x-model="customer.name" :placeholder="t('fullName')" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right" required>
-                <input type="text" x-model="customer.phone" :placeholder="t('phone')" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right" required>
-                <input type="text" x-model="customer.location" :placeholder="t('location')" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right" required>
+                <input type="text" name="customer-name" autocomplete="name" x-model="customer.name" :placeholder="t('fullName')" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right" required>
+                <input type="tel" name="customer-phone" autocomplete="tel" x-model="customer.phone" :placeholder="t('phone')" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right" required>
+                <input type="text" name="customer-location" autocomplete="street-address" x-model="customer.location" :placeholder="t('location')" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right" required>
                 <button @click="submitOrder" class="w-full gold-bg text-black font-bold py-3.5 rounded-xl" x-text="t('confirmOrder')"></button>
             </div>
         </div>
