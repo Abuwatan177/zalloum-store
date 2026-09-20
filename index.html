@@ -468,7 +468,6 @@
                             </template>
                         </div>
                     </div>
-<button @click="saveLogoImages" :disabled="isCompressing" class="gold-bg disabled:bg-gray-300 disabled:text-gray-500 text-black font-bold px-6 py-3 rounded-xl w-full">حفظ الشعار</button>
                     <div x-show="productColors(selectedProduct).length" class="mb-3">
                         <p class="text-gray-700 font-bold mb-2">اختر اللون</p>
                         <div class="flex flex-wrap gap-2">
@@ -537,7 +536,7 @@
             </div>
             <p class="text-xs text-gray-500 mt-4">ارفع النسختين ليبقى الشعار واضحًا عند تبديل الثيم. يمكن حفظ كل نسخة بشكل مستقل.</p>
             <div class="mt-4">
-    <button @click="saveLogoImages" :disabled="(!this.logoWhiteUpload && !this.logoDarkUpload) || isCompressing" class="gold-bg disabled:bg-gray-300 disabled:text-gray-500 text-black font-bold px-6 py-3 rounded-xl w-full">حفظ الشعار</button>
+    <button type="button" @click="saveLogoImages" :disabled="(!logoWhiteUpload && !logoDarkUpload) || isCompressing" class="gold-bg disabled:bg-gray-300 disabled:text-gray-500 text-black font-bold px-6 py-3 rounded-xl w-full">حفظ الشعار</button>
 </div>
         </div>
         <div class="lg:col-span-3 bg-white rounded-2xl p-6 border border-[#D4AF37] shadow-sm">
@@ -567,7 +566,7 @@
                     </div>
                 </template>
             </div>
-            <p class="text-xs text-gray-500 mt-4">يمكنك رفع 3 صور، وستدور تلقائيًا في الهيرو بأنميشن سلس. الصور تحفظ داخل مجلد uploads.</p>
+            <p class="text-xs text-gray-500 mt-4">يمكنك رفع 3 صور، وستدور تلقائيًا في الهيرو بأنميشن سلس. الصور تحفظ في Supabase Storage.</p>
         </div>
         <div class="lg:col-span-3 bg-white rounded-2xl p-6 border border-[#D4AF37] shadow-sm">
             <div class="flex items-center justify-between gap-4 mb-4">
@@ -616,9 +615,6 @@
                             <button @click="startEditing(group)" class="bg-[#121212] text-white px-3 py-2 rounded-lg text-sm font-bold">تعديل الرئيسي</button>
                             <button @click="deleteProduct(group)" class="text-red-600 p-2" title="حذف المنتج وفروعه"><i class="fa-solid fa-trash"></i></button>
                         </div>
-                        <p class="text-xs text-gray-500 mt-4">ارفع النسختين ليبقى الشعار واضحًا عند تبديل الثيم. يمكن حفظ كل نسخة بشكل مستقل.</p>
-            <button @click="saveLogoImages" :disabled="(!this.logoWhiteUpload && !this.logoDarkUpload) || isCompressing" class="mt-4 gold-bg disabled:bg-gray-300 disabled:text-gray-500 text-black font-bold px-6 py-3 rounded-xl w-full">حفظ الشعار</button>
-        </div>
                         <div class="mr-5 border-r-2 border-[#D4AF37] pr-3 space-y-2">
                             <template x-for="variant in group.variants" :key="variant.id">
                                 <div class="flex flex-wrap items-center gap-3 text-sm">
@@ -911,6 +907,7 @@
 
         async init() {
             this.applyTranslations();
+            this.restoreCart();
             try {
                 const [productsResponse, settingsResponse] = await Promise.all([
                     fetch('/api/products'),
@@ -936,7 +933,6 @@
                             const count = this.heroImages.length || 1;
                             this.heroIndex = (this.heroIndex + 1) % count;
                         }, 4500);
-                        this.restoreCart();
                     }
                     catch (e) {
                         console.error(e);
@@ -952,15 +948,28 @@
                     try {
                         const saved = JSON.parse(localStorage.getItem('zalloum_cart') || '[]');
                         if (!Array.isArray(saved)) return;
-                        this.cart = saved.map(item => {
-                            const group = this.products.find(product => product.id === item.groupId || product.variants?.some(v => v.id === item.id));
-                            const variant = group?.variants?.find(v => v.id === item.id);
-                            if (!group || !variant || variant.stock < 1) return null;
-                            return { ...group, ...variant, groupId: group.id, quantity: Math.min(Math.max(Number(item.quantity) || 1, 1), variant.stock) };
-                        }).filter(Boolean);
-                        this.persistCart();
+                        this.cart = saved
+                            .filter(item => item && item.id !== undefined)
+                            .map(item => {
+                                const group = this.products.find(product =>
+                                    product.id === item.groupId ||
+                                    product.variants?.some(variant => variant.id === item.id)
+                                );
+                                const variant = group?.variants?.find(candidate => candidate.id === item.id);
+                                // Keep the saved line even when stock temporarily reaches zero or
+                                // the catalog request is unavailable. The checkout API validates
+                                // availability when the order is submitted.
+                                return {
+                                    ...item,
+                                    ...(group || {}),
+                                    ...(variant || {}),
+                                    groupId: item.groupId ?? group?.id,
+                                    quantity: Math.max(Number(item.quantity) || 1, 1)
+                                };
+                            });
                     } catch (_) {
-                        localStorage.removeItem('zalloum_cart');
+                        // Never clear the in-memory cart because of a temporary
+                        // storage or parsing failure.
                     }
                 },
                 toEnglishNumber(value) {
