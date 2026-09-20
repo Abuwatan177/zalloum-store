@@ -214,7 +214,15 @@ app.post('/api/checkout', requireDb, async (req, res, next) => {
 });
 app.get('/api/admin/orders', adminOnly, requireDb, async (req, res, next) => { try { const { data, error } = await supabase.from('orders').select('*, order_items(*)').order('id', { ascending: false }); if (error) throw error; res.json(data || []); } catch (e) { next(e); } });
 app.patch('/api/admin/orders/:id', adminOnly, requireDb, async (req, res, next) => { try { const id = idOf(req.params.id), status = text(req.body && req.body.status); if (!id || !['new', 'confirmed', 'shipped', 'cancelled'].includes(status)) return fail(res, 400, 'Invalid order status'); const { data, error } = await supabase.from('orders').update({ status }).eq('id', id).select().single(); if (error) throw error; res.json({ success: true, order: data }); } catch (e) { next(e); } });
-app.delete('/api/admin/orders/clear', adminOnly, requireDb, async (req, res, next) => { try { const items = await supabase.from('order_items').delete().gt('id', 0); if (items.error) throw items.error; const orders = await supabase.from('orders').delete().gt('id', 0); if (orders.error) throw orders.error; res.json({ success: true }); } catch (e) { next(e); } });
+app.delete('/api/admin/orders/clear', adminOnly, requireDb, async (req, res, next) => {
+  try {
+    const items = await supabase.from('order_items').delete().neq('id', 0);
+    if (items.error) throw items.error;
+    const orders = await supabase.from('orders').delete().neq('id', 0);
+    if (orders.error) throw orders.error;
+    res.json({ success: true, message: 'Orders cleared' });
+  } catch (e) { next(e); }
+});
 app.delete('/api/admin/orders/:id', adminOnly, requireDb, async (req, res, next) => { try { const id = idOf(req.params.id); if (!id) return fail(res, 400, 'Invalid order id'); await supabase.from('order_items').delete().eq('order_id', id); const { error } = await supabase.from('orders').delete().eq('id', id); if (error) throw error; res.json({ success: true }); } catch (e) { next(e); } });
 
 const settingRoutes = {
@@ -255,6 +263,9 @@ app.use('/assets/fonts', express.static(path.join(__dirname, 'assets')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, '..', 'index.html')));
 app.get(/(.*)/, (req, res) => res.sendFile(path.join(__dirname, '..', 'index.html')));
-app.use((err, req, res, next) => { console.error(err); fail(res, err.status || 500, err.status ? err.message : 'Internal server error'); });
+app.use((err, req, res, next) => {
+  console.error(err);
+  fail(res, err.status || 500, err.status ? err.message : 'Internal server error', process.env.NODE_ENV === 'production' ? undefined : err.message);
+});
 if (require.main === module) app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
 module.exports = app;
