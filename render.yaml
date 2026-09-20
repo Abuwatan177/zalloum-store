@@ -4,7 +4,7 @@ services:
     runtime: node
     rootDir: backend
     buildCommand: npm install
-    startCommand: npm start
+   startCommand: node server.js
     healthCheckPath: /healthz
     disk:
       name: zalloum-store-data
