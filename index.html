@@ -411,7 +411,11 @@
                                         <img :src="assetUrl(selectedVariant(product)?.image || product.image)" :alt="product.name" loading="lazy" decoding="async" class="w-full h-full object-cover">
                                     </div>
                                     <h3 class="font-bold text-lg text-gray-900 mt-2 truncate" x-text="product.name"></h3>
-                                    <p class="gold-accent font-black text-xl my-1 number" x-text="'₪ ' + toEnglishNumber(product.price)"></p>
+                                    <div class="flex items-center gap-2 my-1">
+                                        <p class="gold-accent font-black text-xl number" x-text="'₪ ' + toEnglishNumber(salePrice(product))"></p>
+                                        <p x-show="discountPercent(product) > 0" class="text-gray-400 text-sm line-through number" x-text="'₪ ' + toEnglishNumber(originalPrice(product))"></p>
+                                        <span x-show="discountPercent(product) > 0" class="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded-full number" x-text="'-' + toEnglishNumber(discountPercent(product)) + '%'"></span>
+                                    </div>
                                     <p class="text-gray-500 text-xs line-clamp-2 leading-relaxed" x-text="product.description"></p>
                                     <div x-show="productSizes(product).length" class="mt-3" @click.stop>
                                         <p class="text-xs font-bold text-gray-700 mb-1" x-text="t('chooseSize')"></p>
@@ -458,7 +462,11 @@
                 <div class="flex flex-col justify-center">
                     <span class="text-sm text-gray-500" x-text="selectedProduct?.category"></span>
                     <h2 class="text-3xl font-black mt-2" x-text="selectedProduct?.name"></h2>
-                    <p class="gold-accent text-2xl font-black my-3 number" x-text="'₪ ' + toEnglishNumber(selectedProduct?.price)"></p>
+                    <div class="flex items-center gap-2 my-3">
+                        <p class="gold-accent text-2xl font-black number" x-text="'₪ ' + toEnglishNumber(salePrice(selectedProduct))"></p>
+                        <p x-show="discountPercent(selectedProduct) > 0" class="text-gray-400 text-base line-through number" x-text="'₪ ' + toEnglishNumber(originalPrice(selectedProduct))"></p>
+                        <span x-show="discountPercent(selectedProduct) > 0" class="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded-full number" x-text="'-' + toEnglishNumber(discountPercent(selectedProduct)) + '%'"></span>
+                    </div>
                     <p class="text-gray-600 leading-relaxed mb-4" x-text="selectedProduct?.description"></p>
                     <div x-show="productSizes(selectedProduct).length" class="mb-3">
                         <p class="text-gray-700 font-bold mb-2">اختر النمرة</p>
@@ -595,7 +603,8 @@
             <form @submit.prevent="addProduct" class="space-y-4">
                 <input type="text" x-model="newProduct.name" placeholder="اسم المنتج" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right" required>
                 <input type="text" x-model="newProduct.category" placeholder="القسم" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right" required>
-                <input type="number" x-model.number="newProduct.price" placeholder="السعر" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right" required>
+                <input type="number" min="0" x-model.number="newProduct.original_price" placeholder="السعر قبل الخصم" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right" required>
+                <input type="number" min="0" x-model.number="newProduct.sale_price" placeholder="السعر بعد الخصم" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right" required>
                 <input type="file" @change="compressImage($event)" accept="image/*" class="w-full bg-gray-50 border border-gray-200 p-2.5 rounded-xl text-right" required>
                 <textarea x-model="newProduct.description" placeholder="الوصف" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-right"></textarea>
                 <p class="text-xs text-gray-500">أضف المنتج الرئيسي أولًا، ثم استخدم «إضافة نمرة/لون» لإضافة كل فرع مع صورته وكميته.</p>
@@ -652,7 +661,8 @@
             <form @submit.prevent="saveProduct" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <input type="text" x-model="editingProduct.name" placeholder="اسم المنتج" class="border rounded-xl p-3" required>
                 <input type="text" x-model="editingProduct.category" placeholder="القسم" class="border rounded-xl p-3" required>
-                <input type="number" min="0" x-model.number="editingProduct.price" placeholder="السعر" class="border rounded-xl p-3" required>
+                <input type="number" min="0" x-model.number="editingProduct.original_price" placeholder="السعر قبل الخصم" class="border rounded-xl p-3" required>
+                <input type="number" min="0" x-model.number="editingProduct.sale_price" placeholder="السعر بعد الخصم" class="border rounded-xl p-3" required>
                 <input type="text" x-model="editingProduct.size" placeholder="النمرة / المقاس (مثال: 42)" class="border rounded-xl p-3" maxlength="40">
                 <input type="text" x-model="editingProduct.color" placeholder="اللون" class="border rounded-xl p-3" maxlength="60">
                 <input type="number" min="0" x-model.number="editingProduct.stock" placeholder="الكمية للمخزون" class="border rounded-xl p-3" required>
@@ -835,7 +845,7 @@
         adminProducts: [],
         orders: [],
         cart: [],
-        editingProduct: { name: '', category: '', price: '', size: '', color: '', stock: 0, image: '', description: '' },
+        editingProduct: { name: '', category: '', original_price: '', sale_price: '', size: '', color: '', stock: 0, image: '', description: '' },
         selectedProduct: null,
         variantParent: null,
         activeCategory: 'الكل',
@@ -870,7 +880,7 @@
             }
         },
         customer: { name: '', phone: '', location: '' },
-        newProduct: { name: '', category: '', price: '', size: '', color: '', stock: 0, image: '', description: '' },
+        newProduct: { name: '', category: '', original_price: '', sale_price: '', size: '', color: '', stock: 0, image: '', description: '' },
         newVariant: { size: '', color: '', stock: 0, image: '' },
 
         toggleTheme() {
@@ -980,6 +990,17 @@
                         const index = arabicIndic.indexOf(digit);
                         return index >= 0 ? String(index) : String(eastern.indexOf(digit));
                     });
+                },
+                salePrice(product) {
+                    return Number(product?.sale_price ?? product?.price ?? 0);
+                },
+                originalPrice(product) {
+                    return Number(product?.original_price ?? this.salePrice(product));
+                },
+                discountPercent(product) {
+                    const original = this.originalPrice(product);
+                    const sale = this.salePrice(product);
+                    return original > sale && original > 0 ? Math.round((1 - sale / original) * 100) : 0;
                 },
                 formatOrderDate(value) {
                     if (!value) return '—';
@@ -1451,7 +1472,7 @@
 
                         if (response.ok) {
                             alert('تم حفظ المنتج بنجاح في قاعدة البيانات!');
-                            this.newProduct = { name: '', category: '', price: '', size: '', color: '', stock: 0, image: '', description: '' };
+                            this.newProduct = { name: '', category: '', original_price: '', sale_price: '', size: '', color: '', stock: 0, image: '', description: '' };
                             const fileInput = document.querySelector('input[type="file"]');
                             if(fileInput) fileInput.value = '';
                             await this.loadAdminData();

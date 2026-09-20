@@ -44,7 +44,17 @@ function validateProduct(body, partial = false) {
   const out = {};
   if (!partial || body.name !== undefined) { out.name = text(body.name); if (!out.name) return 'name is required'; }
   for (const key of ['category', 'description', 'size', 'color']) if (!partial || body[key] !== undefined) out[key] = text(body[key]);
-  if (!partial || body.price !== undefined) { out.price = Number(body.price); if (!Number.isFinite(out.price) || out.price < 0) return 'price must be a non-negative number'; }
+  const salePriceInput = body.sale_price ?? body.price;
+  const originalPriceInput = body.original_price ?? salePriceInput;
+  if (!partial || body.price !== undefined || body.sale_price !== undefined) {
+    out.price = Number(salePriceInput);
+    if (!Number.isFinite(out.price) || out.price < 0) return 'sale price must be a non-negative number';
+    out.sale_price = out.price;
+  }
+  if (!partial || body.original_price !== undefined || body.sale_price !== undefined || body.price !== undefined) {
+    out.original_price = Number(originalPriceInput);
+    if (!Number.isFinite(out.original_price) || out.original_price < out.sale_price) return 'original price must be greater than or equal to sale price';
+  }
   if (!partial || body.stock !== undefined) { out.stock = Number(body.stock ?? 0); if (!Number.isInteger(out.stock) || out.stock < 0) return 'stock must be a non-negative integer'; }
   if (body.parent_id !== undefined) { out.parent_id = idOf(body.parent_id); if (body.parent_id && !out.parent_id) return 'parent_id is invalid'; }
   return out;
@@ -72,7 +82,13 @@ async function products() {
   if (error) throw error;
   const rows = data || []; const children = new Map();
   rows.forEach(row => { if (row.parent_id) { if (!children.has(row.parent_id)) children.set(row.parent_id, []); children.get(row.parent_id).push(row); } });
-  return rows.filter(row => !row.parent_id).map(row => ({ ...row, variants: children.get(row.id) || [] }));
+  const normalize = row => ({
+    ...row,
+    price: Number(row.sale_price ?? row.price ?? 0),
+    sale_price: Number(row.sale_price ?? row.price ?? 0),
+    original_price: Number(row.original_price ?? row.sale_price ?? row.price ?? 0)
+  });
+  return rows.filter(row => !row.parent_id).map(row => ({ ...normalize(row), variants: (children.get(row.id) || []).map(normalize) }));
 }
 async function setting(key, value) {
   const result = await supabase.from('store_settings').upsert({ key, value: typeof value === 'string' ? value : JSON.stringify(value) }, { onConflict: 'key' });
@@ -149,7 +165,13 @@ app.post('/api/checkout', requireDb, async (req, res, next) => {
     const ids = [...requested.keys()]; const { data: rows, error } = await supabase.from('products').select('*').in('id', ids); if (error) throw error;
     if (!rows || rows.length !== ids.length) return fail(res, 400, 'One or more products no longer exist');
     for (const row of rows) if (Number(row.stock || 0) < requested.get(row.id)) return fail(res, 409, `Insufficient stock for ${row.name}`);
-    const items = rows.map(row => ({ product_id: row.id, product_name: row.name, quantity: requested.get(row.id), price: Number(row.price) }));
+    const items = rows.map(row => ({
+      product_id: row.id,
+      product_name: row.name,
+      quantity: requested.get(row.id),
+      price: Number(row.sale_price ?? row.price),
+      original_price: Number(row.original_price ?? row.sale_price ?? row.price)
+    }));
     const total = items.reduce((n, x) => n + x.price * x.quantity, 0);
     const { data: order, error: orderError } = await supabase.from('orders').insert({ customer_name: text(customerName), phone: text(phone), location: text(location), total, status: 'new' }).select().single(); if (orderError) throw orderError;
     const { error: itemError } = await supabase.from('order_items').insert(items.map(x => ({ order_id: order.id, ...x }))); if (itemError) { await supabase.from('orders').delete().eq('id', order.id); throw itemError; }
@@ -165,7 +187,29 @@ app.post('/api/checkout', requireDb, async (req, res, next) => {
       }
       updated.push({ id: row.id, stock: Number(row.stock || 0) });
     }
-    res.status(201).json({ success: true, orderId: order.id, total });
+    const { data: settings } = await supabase.from('store_settings').select('key,value').eq('key', 'whatsapp_link_number').maybeSingle();
+    const whatsappNumber = text(settings?.value).replace(/\D/g, '');
+    const lines = [
+      `طلب جديد #${order.id}`,
+      `الاسم: ${text(customerName)}`,
+      `الهاتف: ${text(phone)}`,
+      `الموقع: ${text(location)}`,
+      '',
+      'المنتجات:',
+      ...items.map(item => {
+        const discount = item.original_price > item.price
+          ? ` (قبل الخصم ₪ ${item.original_price})`
+          : '';
+        const productRow = rows.find(row => row.id === item.product_id);
+        const options = [productRow?.size && `المقاس: ${productRow.size}`, productRow?.color && `اللون: ${productRow.color}`]
+          .filter(Boolean).join('، ');
+        return `${item.product_name}${options ? ` - ${options}` : ''} × ${item.quantity} = ₪ ${item.price * item.quantity}${discount}`;
+      }),
+      '',
+      `الإجمالي: ₪ ${total}`
+    ];
+    const whatsappUrl = whatsappNumber ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(lines.join('\n'))}` : '';
+    res.status(201).json({ success: true, orderId: order.id, total, whatsappUrl });
   } catch (e) { next(e); }
 });
 app.get('/api/admin/orders', adminOnly, requireDb, async (req, res, next) => { try { const { data, error } = await supabase.from('orders').select('*, order_items(*)').order('id', { ascending: false }); if (error) throw error; res.json(data || []); } catch (e) { next(e); } });

@@ -3,6 +3,8 @@ create table if not exists public.products (
     name text not null,
     category text not null default '',
     price numeric(12, 2) not null default 0 check (price >= 0),
+    original_price numeric(12, 2) not null default 0 check (original_price >= 0),
+    sale_price numeric(12, 2) not null default 0 check (sale_price >= 0),
     image text not null default '',
     description text not null default '',
     size text not null default '',
@@ -39,7 +41,8 @@ create table if not exists public.order_items (
     product_id bigint not null,
     product_name text not null,
     quantity integer not null check (quantity > 0),
-    price numeric(12, 2) not null check (price >= 0)
+    price numeric(12, 2) not null check (price >= 0),
+    original_price numeric(12, 2) not null default 0 check (original_price >= 0)
 );
 
 create index if not exists order_items_order_id_idx on public.order_items(order_id);
@@ -47,3 +50,9 @@ create index if not exists order_items_order_id_idx on public.order_items(order_
 insert into storage.buckets (id, name, public)
 values ('store-images', 'store-images', true)
 on conflict (id) do update set public = excluded.public;
+
+alter table public.products add column if not exists original_price numeric(12, 2) not null default 0;
+alter table public.products add column if not exists sale_price numeric(12, 2) not null default 0;
+alter table public.order_items add column if not exists original_price numeric(12, 2) not null default 0;
+update public.products set sale_price = price where sale_price = 0 and price > 0;
+update public.products set original_price = sale_price where original_price = 0;
