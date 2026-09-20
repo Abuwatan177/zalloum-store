@@ -1379,7 +1379,7 @@
                     return [...parents.values()];
                 },
 
-                processImage(file, maxDimension = 1200, quality = 0.85, type = 'image/webp') {
+                processImage(file, quality = 0.92, type = 'image/webp') {
                     return new Promise((resolve, reject) => {
                         const reader = new FileReader();
                         reader.onerror = () => reject(new Error('تعذر تحميل الصورة'));
@@ -1387,10 +1387,9 @@
                             const img = new Image();
                             img.onerror = () => reject(new Error('تعذر قراءة الصورة'));
                             img.onload = () => {
-                                const scale = Math.min(1, maxDimension / Math.max(img.width, img.height));
                                 const canvas = document.createElement('canvas');
-                                canvas.width = Math.max(1, Math.round(img.width * scale));
-                                canvas.height = Math.max(1, Math.round(img.height * scale));
+                                canvas.width = img.width;
+                                canvas.height = img.height;
                                 const context = canvas.getContext('2d');
                                 context.imageSmoothingEnabled = true;
                                 context.imageSmoothingQuality = 'high';
@@ -1438,12 +1437,10 @@
                         const img = new Image();
                         img.onload = () => {
                             const canvas = document.createElement('canvas');
-                            const maxSize = 1600;
-                            const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
-                            canvas.width = Math.max(1, Math.round(img.width * scale));
-                            canvas.height = Math.max(1, Math.round(img.height * scale));
+                            canvas.width = img.width;
+                            canvas.height = img.height;
                             canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-                            this.heroUploads[index] = canvas.toDataURL('image/webp', 0.85);
+                            this.heroUploads[index] = canvas.toDataURL('image/webp', 0.9);
                             this.isCompressing = false;
                         };
                         img.onerror = () => { this.isCompressing = false; alert('تعذر قراءة الصورة'); };
@@ -1579,14 +1576,13 @@
                         const img = new Image();
                         img.onload = () => {
                             const canvas = document.createElement('canvas');
-                            const scale = Math.min(1, 1200 / Math.max(img.width, img.height));
-                            canvas.width = Math.max(1, Math.round(img.width * scale));
-                            canvas.height = Math.max(1, Math.round(img.height * scale));
+                            canvas.width = img.width;
+                            canvas.height = img.height;
                             const context = canvas.getContext('2d');
                             context.imageSmoothingEnabled = true;
                             context.imageSmoothingQuality = 'high';
                             context.drawImage(img, 0, 0, canvas.width, canvas.height);
-                            this.editingProduct.image = canvas.toDataURL('image/webp', 0.85);
+                            this.editingProduct.image = canvas.toDataURL('image/webp', 0.92);
                             this.isCompressing = false;
                         };
                         img.src = e.target.result;
