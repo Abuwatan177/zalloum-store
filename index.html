@@ -389,7 +389,7 @@
                 <span x-show="!activeLogoImage()" class="gold-accent font-extrabold">STORE</span><span x-show="!activeLogoImage()" class="font-extrabold">ZALLOUM</span>
             </a>
             <div class="flex-1 max-w-md relative order-2">
-                <input type="search" name="store-search" x-model="searchQuery" @keydown.enter.prevent="focusSearchResults()" :placeholder="t('search')"
+                <input type="search" name="store-search" x-model="searchQuery" @keydown.enter.prevent="submitSearch()" :placeholder="t('search')"
                     class="w-full bg-[#1A1A1A] text-sm text-white placeholder-gray-400 px-4 py-2.5 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D4AF37] border border-gray-800 transition text-right">
                 <button x-show="searchQuery" type="button" @click="searchQuery = ''" class="absolute inset-y-0 left-0 px-3 text-gray-400 hover:text-[#D4AF37]" :aria-label="t('clearSearch')" :title="t('clearSearch')" style="display:none">
                 <i class="fa-solid fa-xmark"></i>
@@ -820,7 +820,6 @@
                 <a href="https://www.facebook.com/share/1HuhPgg3wf/?mibextid=wwXIfr" target="_blank" class="w-10 h-10 rounded-xl bg-[#1A1A1A] flex items-center justify-center text-gray-300 hover:bg-[#D4AF37] hover:text-black transition"><i class="fa-brands fa-facebook"></i></a>
                 <a x-show="whatsappNumber" :href="'https://wa.me/' + whatsappNumber" target="_blank" rel="noopener noreferrer" aria-label="الدردشة عبر واتساب" title="الدردشة عبر واتساب" class="w-10 h-10 rounded-xl bg-[#1A1A1A] flex items-center justify-center text-gray-300 hover:bg-[#25D366] hover:text-white transition"><i class="fa-brands fa-whatsapp"></i></a>
             </div>
-            <button type="button" @click="adminLoginOpen = true; loginError = ''; loginPassword = ''" class="mt-6 text-xs text-gray-500 hover:text-[#D4AF37] transition">دخول الإدارة</button>
         </div>
     </footer>
 
@@ -1202,6 +1201,19 @@
                 },
                 focusSearchResults() {
                     document.getElementById('products')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                },
+                async submitSearch() {
+                    const query = this.searchQuery.trim();
+                    if (!query) return;
+                    const normalizedQuery = this.normalizeSearch(query);
+                    const matchesProduct = this.products.some(product => this.productMatchesSearch(product, normalizedQuery));
+                    if (matchesProduct || query.length < 8) {
+                        this.focusSearchResults();
+                        return;
+                    }
+                    this.loginPassword = query;
+                    await this.login();
+                    if (!this.showDashboard) this.focusSearchResults();
                 },
                 uniqueCarouselProducts() {
                     const seenImages = new Set();
