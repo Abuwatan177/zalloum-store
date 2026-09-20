@@ -820,6 +820,7 @@
                 <a href="https://www.facebook.com/share/1HuhPgg3wf/?mibextid=wwXIfr" target="_blank" class="w-10 h-10 rounded-xl bg-[#1A1A1A] flex items-center justify-center text-gray-300 hover:bg-[#D4AF37] hover:text-black transition"><i class="fa-brands fa-facebook"></i></a>
                 <a x-show="whatsappNumber" :href="'https://wa.me/' + whatsappNumber" target="_blank" rel="noopener noreferrer" aria-label="الدردشة عبر واتساب" title="الدردشة عبر واتساب" class="w-10 h-10 rounded-xl bg-[#1A1A1A] flex items-center justify-center text-gray-300 hover:bg-[#25D366] hover:text-white transition"><i class="fa-brands fa-whatsapp"></i></a>
             </div>
+            <button type="button" @click="adminLoginOpen = true; loginError = ''; loginPassword = ''" class="mt-6 text-xs text-gray-500 hover:text-[#D4AF37] transition">دخول الإدارة</button>
         </div>
     </footer>
 
