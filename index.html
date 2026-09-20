@@ -468,8 +468,7 @@
                             </template>
                         </div>
                     </div>
-<button @click="saveLogoImages" :disabled="(!this.logoWhiteUpload && !this.logoDarkUpload) || isCompressing" class="mt-4 gold-bg disabled:bg-gray-300 disabled:text-gray-500 text-black font-bold px-6 py-3 rounded-xl">حفظ الشعار</button>
-
+<button @click="saveLogoImages" :disabled="isCompressing" class="gold-bg disabled:bg-gray-300 disabled:text-gray-500 text-black font-bold px-6 py-3 rounded-xl w-full">حفظ الشعار</button>
                     <div x-show="productColors(selectedProduct).length" class="mb-3">
                         <p class="text-gray-700 font-bold mb-2">اختر اللون</p>
                         <div class="flex flex-wrap gap-2">
