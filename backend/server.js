@@ -15,12 +15,27 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 const supabase = (SUPABASE_URL && SUPABASE_ANON_KEY) ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-// مسار التخزين المحلي للصور المرفوعة
-const UPLOADS_DIR = process.env.DATA_DIR ? path.join(process.env.DATA_DIR, 'uploads') : path.join(__dirname, 'uploads');
-if (!fs.existsSync(UPLOADS_DIR)) {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+// مسار التخزين المحلي للصور المرفوعة مع حماية تامة ضد أخطاء الصلاحيات على Render
+let UPLOADS_DIR = path.join(__dirname, 'uploads');
+try {
+  if (process.env.DATA_DIR) {
+    const diskUploads = path.join(process.env.DATA_DIR, 'uploads');
+    if (!fs.existsSync(diskUploads)) {
+      fs.mkdirSync(diskUploads, { recursive: true });
+    }
+    UPLOADS_DIR = diskUploads;
+  } else {
+    if (!fs.existsSync(UPLOADS_DIR)) {
+      fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+    }
+  }
+} catch (err) {
+  console.warn('Warning: Could not use /var/data/uploads, falling back to local directory:', err.message);
+  UPLOADS_DIR = path.join(__dirname, 'uploads');
+  if (!fs.existsSync(UPLOADS_DIR)) {
+    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+  }
 }
-
 app.use('/uploads', express.static(UPLOADS_DIR));
 app.use('/assets/fonts', express.static(path.join(__dirname, 'assets')));
 
