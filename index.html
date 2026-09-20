@@ -537,7 +537,9 @@
                 </div>
             </div>
             <p class="text-xs text-gray-500 mt-4">ارفع النسختين ليبقى الشعار واضحًا عند تبديل الثيم. يمكن حفظ كل نسخة بشكل مستقل.</p>
-        </div>
+            <div class="mt-4">
+    <button @click="saveLogoImages" :disabled="(!logoWhiteUpload && !logoDarkUpload) || isCompressing" class="gold-bg disabled:bg-gray-300 disabled:text-gray-500 text-black font-bold px-6 py-3 rounded-xl w-full">حفظ الشعار</button>
+</div>
         <div class="lg:col-span-3 bg-white rounded-2xl p-6 border border-[#D4AF37] shadow-sm">
             <h3 class="text-lg font-bold text-[#121212]">رقم واتساب للتواصل</h3>
             <p class="text-sm text-gray-500 mt-1 mb-4">اكتب الرقم بصيغة دولية بدون علامة +، وسيظهر رابط الدردشة في الفوتر.</p>
