@@ -614,6 +614,9 @@
                             <button @click="startEditing(group)" class="bg-[#121212] text-white px-3 py-2 rounded-lg text-sm font-bold">تعديل الرئيسي</button>
                             <button @click="deleteProduct(group)" class="text-red-600 p-2" title="حذف المنتج وفروعه"><i class="fa-solid fa-trash"></i></button>
                         </div>
+                        <p class="text-xs text-gray-500 mt-4">ارفع النسختين ليبقى الشعار واضحًا عند تبديل الثيم. يمكن حفظ كل نسخة بشكل مستقل.</p>
+            <button @click="saveLogoImages" :disabled="(!logoWhiteUpload && !logoDarkUpload) || isCompressing" class="mt-4 gold-bg disabled:bg-gray-300 disabled:text-gray-500 text-black font-bold px-6 py-3 rounded-xl w-full">حفظ الشعار</button>
+        </div>
                         <div class="mr-5 border-r-2 border-[#D4AF37] pr-3 space-y-2">
                             <template x-for="variant in group.variants" :key="variant.id">
                                 <div class="flex flex-wrap items-center gap-3 text-sm">
