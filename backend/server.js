@@ -88,8 +88,9 @@ app.use(express.json({ limit: '8mb', strict: true }));
 function cookieToken(req) {
   const cookieHeader = req.get('cookie') || '';
   const match = cookieHeader.match(/(?:^|;\s*)admin_session=([^;]+)/);
-  return match ? match[1] : null;
-}function adminOnly(req, res, next) {
+ return match ? match[1] : null;
+}
+function adminOnly(req, res, next) {
   const token = cookieToken(req);
   const session = token ? sessions.get(token) : null;
   if (!session || session.expires < Date.now()) {
