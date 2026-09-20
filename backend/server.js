@@ -46,14 +46,17 @@ function validateProduct(body, partial = false) {
   for (const key of ['category', 'description', 'size', 'color']) if (!partial || body[key] !== undefined) out[key] = text(body[key]);
   const salePriceInput = body.sale_price ?? body.price;
   const originalPriceInput = body.original_price ?? salePriceInput;
+  const salePrice = Number(salePriceInput ?? 0);
   if (!partial || body.price !== undefined || body.sale_price !== undefined) {
-    out.price = Number(salePriceInput);
-    if (!Number.isFinite(out.price) || out.price < 0) return 'sale price must be a non-negative number';
-    out.sale_price = out.price;
+    if (!Number.isFinite(salePrice) || salePrice < 0) return 'sale price must be a non-negative number';
+    out.price = salePrice;
+    out.sale_price = salePrice;
   }
   if (!partial || body.original_price !== undefined || body.sale_price !== undefined || body.price !== undefined) {
-    out.original_price = Number(originalPriceInput);
-    if (!Number.isFinite(out.original_price) || out.original_price < out.sale_price) return 'original price must be greater than or equal to sale price';
+    const originalPrice = Number(originalPriceInput ?? salePrice ?? 0);
+    if (!Number.isFinite(originalPrice) || originalPrice < 0) return 'original price must be a non-negative number';
+    out.original_price = originalPrice;
+    if (out.sale_price !== undefined && originalPrice < out.sale_price) return 'original price must be greater than or equal to sale price';
   }
   if (!partial || body.stock !== undefined) { out.stock = Number(body.stock ?? 0); if (!Number.isInteger(out.stock) || out.stock < 0) return 'stock must be a non-negative integer'; }
   if (body.parent_id !== undefined) { out.parent_id = idOf(body.parent_id); if (body.parent_id && !out.parent_id) return 'parent_id is invalid'; }
@@ -81,14 +84,25 @@ async function products() {
   const { data, error } = await supabase.from('products').select('*').order('id', { ascending: false });
   if (error) throw error;
   const rows = data || []; const children = new Map();
-  rows.forEach(row => { if (row.parent_id) { if (!children.has(row.parent_id)) children.set(row.parent_id, []); children.get(row.parent_id).push(row); } });
+  rows.forEach(row => {
+    const parentId = idOf(row.parent_id);
+    if (parentId) {
+      if (!children.has(parentId)) children.set(parentId, []);
+      children.get(parentId).push(row);
+    }
+  });
   const normalize = row => ({
     ...row,
     price: Number(row.sale_price ?? row.price ?? 0),
     sale_price: Number(row.sale_price ?? row.price ?? 0),
     original_price: Number(row.original_price ?? row.sale_price ?? row.price ?? 0)
   });
-  return rows.filter(row => !row.parent_id).map(row => ({ ...normalize(row), variants: (children.get(row.id) || []).map(normalize) }));
+  return rows
+    .filter(row => !idOf(row.parent_id))
+    .map(row => ({
+      ...normalize(row),
+      variants: (children.get(idOf(row.id)) || []).map(normalize)
+    }));
 }
 async function setting(key, value) {
   const result = await supabase.from('store_settings').upsert({ key, value: typeof value === 'string' ? value : JSON.stringify(value) }, { onConflict: 'key' });
@@ -138,11 +152,11 @@ app.post('/api/admin/products/:id/variants', adminOnly, requireDb, async (req, r
   try {
     const parent = idOf(req.params.id);
     if (!parent) return fail(res, 400, 'Invalid parent product id');
-    const { data: parentRow, error: parentError } = await supabase.from('products').select('price,category,description').eq('id', parent).is('parent_id', null).single();
+    const { data: parentRow, error: parentError } = await supabase.from('products').select('name,price,category,description').eq('id', parent).is('parent_id', null).single();
     if (parentError || !parentRow) return fail(res, 404, 'Parent product not found');
     const v = validateProduct({
       ...req.body,
-      name: req.body.name || req.body.variantName || 'Variant',
+      name: req.body.name || req.body.variantName || parentRow.name,
       price: req.body.price ?? parentRow.price,
       category: req.body.category ?? parentRow.category,
       description: req.body.description ?? parentRow.description,
@@ -165,9 +179,16 @@ app.post('/api/checkout', requireDb, async (req, res, next) => {
     const ids = [...requested.keys()]; const { data: rows, error } = await supabase.from('products').select('*').in('id', ids); if (error) throw error;
     if (!rows || rows.length !== ids.length) return fail(res, 400, 'One or more products no longer exist');
     for (const row of rows) if (Number(row.stock || 0) < requested.get(row.id)) return fail(res, 409, `Insufficient stock for ${row.name}`);
+    const parentIds = [...new Set(rows.filter(row => row.parent_id).map(row => row.parent_id))];
+    const parentNames = new Map();
+    if (parentIds.length) {
+      const { data: parentRows, error: parentError } = await supabase.from('products').select('id,name').in('id', parentIds);
+      if (parentError) throw parentError;
+      (parentRows || []).forEach(parentRow => parentNames.set(parentRow.id, parentRow.name));
+    }
     const items = rows.map(row => ({
       product_id: row.id,
-      product_name: row.name,
+      product_name: parentNames.get(row.parent_id) || row.name,
       quantity: requested.get(row.id),
       price: Number(row.sale_price ?? row.price),
       original_price: Number(row.original_price ?? row.sale_price ?? row.price)

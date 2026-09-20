@@ -656,7 +656,7 @@
         <div x-show="editingProduct && editingProduct.id" class="lg:col-span-3 bg-white rounded-2xl p-6 border border-[#D4AF37] shadow-sm">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-bold"> تعديل المنتج</h3>
-                <button @click="editingProduct = null" class="text-gray-500 p-2"><i class="fa-solid fa-xmark"></i></button>
+                <button @click="editingProduct = emptyProduct()" class="text-gray-500 p-2"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <form @submit.prevent="saveProduct" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <input type="text" x-model="editingProduct.name" placeholder="اسم المنتج" class="border rounded-xl p-3" required>
@@ -845,7 +845,7 @@
         adminProducts: [],
         orders: [],
         cart: [],
-        editingProduct: { name: '', category: '', original_price: '', sale_price: '', size: '', color: '', stock: 0, image: '', description: '' },
+        editingProduct: { id: null, name: '', category: '', original_price: 0, sale_price: 0, size: '', color: '', stock: 0, image: '', description: '' },
         selectedProduct: null,
         variantParent: null,
         activeCategory: 'الكل',
@@ -883,6 +883,30 @@
         newProduct: { name: '', category: '', original_price: '', sale_price: '', size: '', color: '', stock: 0, image: '', description: '' },
         newVariant: { size: '', color: '', stock: 0, image: '' },
 
+        emptyProduct() {
+            return { id: null, name: '', category: '', original_price: 0, sale_price: 0, size: '', color: '', stock: 0, image: '', description: '' };
+        },
+        normalizeProduct(product = {}) {
+            const source = product && typeof product === 'object' ? product : {};
+            const sale = Number(source.sale_price ?? source.price ?? 0);
+            const original = Number(source.original_price ?? sale ?? 0);
+            const normalized = this.emptyProduct();
+            return {
+                ...normalized,
+                ...source,
+                id: source.id ?? null,
+                name: String(source.name ?? ''),
+                category: String(source.category ?? ''),
+                original_price: Number.isFinite(original) ? original : 0,
+                sale_price: Number.isFinite(sale) ? sale : 0,
+                price: Number.isFinite(sale) ? sale : 0,
+                size: String(source.size ?? ''),
+                color: String(source.color ?? ''),
+                stock: Number(source.stock ?? 0),
+                image: source.image ?? '',
+                description: String(source.description ?? '')
+            };
+        },
         toggleTheme() {
             this.lightTheme = !this.lightTheme;
             localStorage.setItem('zalloum_light_theme', String(this.lightTheme));
@@ -1124,16 +1148,14 @@
                     );
                 },
                 adminProductGroups() {
-                    const groups = new Map();
-                    this.adminProducts.forEach(product => {
-                        const parent = product.parent_id
-                            ? this.adminProducts.find(item => item.id === product.parent_id)
-                            : product;
-                        if (!parent) return;
-                        if (!groups.has(parent.id)) groups.set(parent.id, { ...parent, variants: [] });
-                        if (product.id !== parent.id) groups.get(parent.id).variants.push(product);
-                    });
-                    return [...groups.values()];
+                    return this.adminProducts
+                        .filter(product => product && !product.parent_id)
+                        .map(product => ({
+                            ...product,
+                            variants: Array.isArray(product.variants)
+                                ? product.variants.filter(variant => variant && variant.id)
+                                : []
+                        }));
                 },
 
                 async tryHiddenDashboard() {
@@ -1174,7 +1196,34 @@
                         return;
                     }
                     this.orders = await ordersResponse.json();
-                    this.adminProducts = await productsResponse.json();
+                    this.adminProducts = this.normalizeAdminProducts(await productsResponse.json());
+                },
+                normalizeAdminProducts(data) {
+                    if (!Array.isArray(data)) return [];
+                    const flat = [];
+                    const parents = new Map();
+                    data.forEach(product => {
+                        if (!product || !product.id) return;
+                        const parent = { ...product, variants: [] };
+                        parents.set(Number(product.id), parent);
+                        flat.push(parent);
+                        (Array.isArray(product.variants) ? product.variants : []).forEach(variant => {
+                            if (variant && variant.id) flat.push({ ...variant, parent_id: variant.parent_id ?? product.id });
+                        });
+                    });
+                    data.forEach(product => {
+                        (Array.isArray(product.variants) ? product.variants : []).forEach(variant => {
+                            const parent = parents.get(Number(product.id));
+                            if (parent && variant && variant.id) parent.variants.push({ ...variant, parent_id: variant.parent_id ?? product.id });
+                        });
+                    });
+                    flat.filter(product => product.parent_id).forEach(variant => {
+                        const parent = parents.get(Number(variant.parent_id));
+                        if (parent && !parent.variants.some(item => Number(item.id) === Number(variant.id))) {
+                            parent.variants.push(variant);
+                        }
+                    });
+                    return [...parents.values()];
                 },
 
                 compressImage(event) {
@@ -1357,7 +1406,7 @@
                 },
 
                 startEditing(product) {
-                    this.editingProduct = { ...product };
+                    this.editingProduct = this.normalizeProduct(product);
                     this.$nextTick(() => document.querySelector('[x-show="editingProduct"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
                 },
 
@@ -1485,24 +1534,29 @@
                     }
                 },
                 async saveProduct() {
-                    if (this.isCompressing || !this.editingProduct?.image) {
+                    if (this.isCompressing) {
                         alert('الرجاء الانتظار حتى تنتهي معالجة الصورة');
                         return;
                     }
-                    const response = await fetch(`${this.apiUrl}/admin/products/${this.editingProduct.id}`, {
+                    const payload = this.normalizeProduct(this.editingProduct);
+                    if (!payload.id) {
+                        alert('لم يتم تحديد المنتج للتعديل');
+                        return;
+                    }
+                    const response = await fetch(`${this.apiUrl}/admin/products/${payload.id}`, {
                         method: 'PUT',
                         credentials: 'include',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(this.editingProduct)
+                        body: JSON.stringify(payload)
                     });
                     const data = await response.json();
                     if (!response.ok) {
                         alert(data.error || 'تعذر حفظ التعديلات');
                         return;
                     }
-                    const index = this.adminProducts.findIndex(product => product.id === this.editingProduct.id);
-                    if (index >= 0) this.adminProducts[index] = { ...this.editingProduct };
-         this.editingProduct = null;
+                    const index = this.adminProducts.findIndex(product => product.id === payload.id);
+                    if (index >= 0) this.adminProducts[index] = { ...payload };
+                    this.editingProduct = this.emptyProduct();
                     alert('تم حفظ تعديلات المنتج');
                 },
                 async updateStock(product, stock) {
@@ -1517,6 +1571,24 @@
                 async updateOrderStatus(order, status) {
                     const response = await fetch(`${this.apiUrl}/admin/orders/${order.id}`, {method:'PATCH', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status})});
                     if (response.ok) order.status = status; else alert('تعذر تحديث حالة الطلب');
+                },
+                async clearOrders() {
+                    if (!confirm('سيتم حذف جميع الطلبات وتصفير ترقيمها. هل تريد المتابعة؟')) return;
+                    try {
+                        const response = await fetch(`${this.apiUrl}/admin/orders/clear`, {
+                            method: 'DELETE',
+                            credentials: 'include'
+                        });
+                        const data = await response.json().catch(() => ({}));
+                        if (!response.ok) {
+                            alert(data.details || data.error || 'تعذر تصفير الطلبات');
+                            return;
+                        }
+                        this.orders = [];
+                        alert('تم تصفير الطلبات بنجاح');
+                    } catch (error) {
+                        alert(error.message || 'تعذر الاتصال بالخادم لتصفير الطلبات');
+                    }
                 },
                 async deleteOrder(order) {
                     if (!confirm(`حذف الطلب #${order.id} نهائيًا؟`)) return;
@@ -1566,23 +1638,6 @@ const response = await fetch('/api/admin/login', {
             }
         };
 
-        // دالة تصفير الطلبات الملحقة
-        storeApp.prototype.clearOrders = async function() {
-            if (!confirm('سيتم حذف جميع الطلبات وتصفير ترقيمها. هل تريد المتابعة؟')) return;
-            try {
-                const response = await fetch(`${this.apiUrl}/admin/orders/clear`, { method: 'DELETE', credentials: 'include' });
-                const data = await response.json().catch(() => ({}));
-                if (!response.ok) {
-                    alert(data.details || data.error || 'تعذر تصفير الطلبات');
-                    return;
-                }
-                this.orders = [];
-                await this.loadAdminData();
-                alert('تم تصفير الطلبات بنجاح');
-            } catch (error) {
-                alert(error.message || 'تعذر الاتصال بالخادم لتصفير الطلبات');
-            }
-        };
     </script>
 </body>
 </html>
