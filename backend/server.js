@@ -15,6 +15,21 @@ const supabase = SUPABASE_URL && SUPABASE_KEY ? createClient(SUPABASE_URL, SUPAB
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const sessions = new Map();
 const SESSION_TTL = 8 * 60 * 60 * 1000;
+const CACHE_TTL = 5 * 1000;
+let productsCache = null;
+let productsCacheAt = 0;
+let settingsCache = null;
+let settingsCacheAt = 0;
+
+function invalidateCatalogCache() {
+  productsCache = null;
+  productsCacheAt = 0;
+}
+
+function invalidateSettingsCache() {
+  settingsCache = null;
+  settingsCacheAt = 0;
+}
 
 app.use(compression());
 app.use(express.json({ limit: '12mb', strict: true }));
@@ -81,6 +96,7 @@ async function imageUrl(value) {
   return supabase.storage.from(STORAGE_BUCKET).getPublicUrl(file).data.publicUrl;
 }
 async function products() {
+  if (productsCache && Date.now() - productsCacheAt < CACHE_TTL) return productsCache;
   const { data, error } = await supabase.from('products').select('*').order('id', { ascending: false });
   if (error) throw error;
   const rows = data || []; const children = new Map();
@@ -97,16 +113,19 @@ async function products() {
     sale_price: Number(row.sale_price ?? row.price ?? 0),
     original_price: Number(row.original_price ?? row.sale_price ?? row.price ?? 0)
   });
-  return rows
+  productsCache = rows
     .filter(row => !idOf(row.parent_id))
     .map(row => ({
       ...normalize(row),
       variants: (children.get(idOf(row.id)) || []).map(normalize)
     }));
+  productsCacheAt = Date.now();
+  return productsCache;
 }
 async function setting(key, value) {
   const result = await supabase.from('store_settings').upsert({ key, value: typeof value === 'string' ? value : JSON.stringify(value) }, { onConflict: 'key' });
   if (result.error) throw result.error;
+  invalidateSettingsCache();
 }
 
 app.get('/healthz', (req, res) => res.json({ ok: true }));
@@ -114,10 +133,13 @@ app.get('/api/products', requireDb, async (req, res, next) => { try { res.json(a
 app.get('/api/store-settings', async (req, res, next) => {
   if (!supabase) return res.json({ heroImages: [], logoWhite: '', logoDark: '', whatsappNumber: '', homepageText: null });
   try {
+    if (settingsCache && Date.now() - settingsCacheAt < CACHE_TTL) return res.json(settingsCache);
     const { data, error } = await supabase.from('store_settings').select('key,value'); if (error) throw error;
     const s = Object.fromEntries((data || []).map(x => [x.key, x.value]));
     const parse = (v, fallback) => { try { return v ? JSON.parse(v) : fallback; } catch (_) { return fallback; } };
-    res.json({ heroImages: parse(s.hero_images, s.hero_image ? [s.hero_image] : []), logoWhite: s.store_logo_white || s.store_logo || '', logoDark: s.store_logo_dark || s.store_logo || '', whatsappNumber: s.whatsapp_link_number || '', homepageText: parse(s.homepage_text, null) });
+    settingsCache = { heroImages: parse(s.hero_images, s.hero_image ? [s.hero_image] : []), logoWhite: s.store_logo_white || s.store_logo || '', logoDark: s.store_logo_dark || s.store_logo || '', whatsappNumber: s.whatsapp_link_number || '', homepageText: parse(s.homepage_text, null) };
+    settingsCacheAt = Date.now();
+    res.json(settingsCache);
   } catch (e) { next(e); }
 });
 app.post('/api/admin/login', (req, res) => {
@@ -131,10 +153,10 @@ app.post('/api/admin/login', (req, res) => {
 });
 app.get('/api/admin/products', adminOnly, requireDb, async (req, res, next) => { try { res.json(await products()); } catch (e) { next(e); } });
 app.post('/api/admin/products', adminOnly, requireDb, async (req, res, next) => {
-  try { const v = validateProduct(req.body || {}); if (typeof v === 'string') return fail(res, 400, v); v.image = await imageUrl(req.body.image); const { data, error } = await supabase.from('products').insert(v).select().single(); if (error) throw error; res.status(201).json({ success: true, id: data.id, product: data }); } catch (e) { next(e); }
+  try { const v = validateProduct(req.body || {}); if (typeof v === 'string') return fail(res, 400, v); v.image = await imageUrl(req.body.image); const { data, error } = await supabase.from('products').insert(v).select().single(); if (error) throw error; invalidateCatalogCache(); res.status(201).json({ success: true, id: data.id, product: data }); } catch (e) { next(e); }
 });
 app.put('/api/admin/products/:id', adminOnly, requireDb, async (req, res, next) => {
-  try { const id = idOf(req.params.id); if (!id) return fail(res, 400, 'Invalid product id'); const v = validateProduct(req.body || {}, true); if (typeof v === 'string') return fail(res, 400, v); if (req.body.image !== undefined) v.image = await imageUrl(req.body.image); const { data, error } = await supabase.from('products').update(v).eq('id', id).select().single(); if (error) throw error; if (!data) return fail(res, 404, 'Product not found'); res.json({ success: true, product: data }); } catch (e) { next(e); }
+  try { const id = idOf(req.params.id); if (!id) return fail(res, 400, 'Invalid product id'); const v = validateProduct(req.body || {}, true); if (typeof v === 'string') return fail(res, 400, v); if (req.body.image !== undefined) v.image = await imageUrl(req.body.image); const { data, error } = await supabase.from('products').update(v).eq('id', id).select().single(); if (error) throw error; if (!data) return fail(res, 404, 'Product not found'); invalidateCatalogCache(); res.json({ success: true, product: data }); } catch (e) { next(e); }
 });
 app.delete('/api/admin/products/:id', adminOnly, requireDb, async (req, res, next) => {
   try {
@@ -144,10 +166,11 @@ app.delete('/api/admin/products/:id', adminOnly, requireDb, async (req, res, nex
     if (children.error) throw children.error;
     const { error } = await supabase.from('products').delete().eq('id', id);
     if (error) throw error;
+    invalidateCatalogCache();
     res.json({ success: true });
   } catch (e) { next(e); }
 });
-app.patch('/api/admin/products/:id/stock', adminOnly, requireDb, async (req, res, next) => { try { const id = idOf(req.params.id), stock = Number(req.body && req.body.stock); if (!id || !Number.isInteger(stock) || stock < 0) return fail(res, 400, 'stock must be a non-negative integer'); const { data, error } = await supabase.from('products').update({ stock }).eq('id', id).select().single(); if (error) throw error; res.json({ success: true, product: data }); } catch (e) { next(e); } });
+app.patch('/api/admin/products/:id/stock', adminOnly, requireDb, async (req, res, next) => { try { const id = idOf(req.params.id), stock = Number(req.body && req.body.stock); if (!id || !Number.isInteger(stock) || stock < 0) return fail(res, 400, 'stock must be a non-negative integer'); const { data, error } = await supabase.from('products').update({ stock }).eq('id', id).select().single(); if (error) throw error; invalidateCatalogCache(); res.json({ success: true, product: data }); } catch (e) { next(e); } });
 app.post('/api/admin/products/:id/variants', adminOnly, requireDb, async (req, res, next) => {
   try {
     const parent = idOf(req.params.id);
@@ -166,6 +189,7 @@ app.post('/api/admin/products/:id/variants', adminOnly, requireDb, async (req, r
     v.image = await imageUrl(req.body.image);
     const { data, error } = await supabase.from('products').insert(v).select().single();
     if (error) throw error;
+    invalidateCatalogCache();
     res.status(201).json({ success: true, variant: data });
   } catch (e) { next(e); }
 });
@@ -208,6 +232,7 @@ app.post('/api/checkout', requireDb, async (req, res, next) => {
       }
       updated.push({ id: row.id, stock: Number(row.stock || 0) });
     }
+    invalidateCatalogCache();
     const { data: settings } = await supabase.from('store_settings').select('key,value').eq('key', 'whatsapp_link_number').maybeSingle();
     const whatsappNumber = text(settings?.value).replace(/\D/g, '');
     const lines = [

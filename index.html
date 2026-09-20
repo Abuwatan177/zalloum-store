@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title> Zalloum Store</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     <style> 
@@ -13,42 +13,42 @@
             src: url('/assets/fonts/jost-400.ttf') format('truetype');
             font-style: normal;
             font-weight: 400;
-            font-display: block;
+            font-display: swap;
         }
         @font-face {
             font-family: 'Jost';
             src: url('/assets/fonts/jost-500.ttf') format('truetype');
             font-style: normal;
             font-weight: 500;
-            font-display: block;
+            font-display: swap;
         }
         @font-face {
             font-family: 'Jost';
             src: url('/assets/fonts/jost-600.ttf') format('truetype');
             font-style: normal;
             font-weight: 600;
-            font-display: block;
+            font-display: swap;
         }
         @font-face {
             font-family: 'Jost';
             src: url('/assets/fonts/jost-700.ttf') format('truetype');
             font-style: normal;
             font-weight: 700;
-            font-display: block;
+            font-display: swap;
         }
         @font-face {
             font-family: 'Jost';
             src: url('/assets/fonts/jost-800.ttf') format('truetype');
             font-style: normal;
             font-weight: 800;
-            font-display: block;
+            font-display: swap;
         }
         @font-face {
             font-family: 'Jost';
             src: url('/assets/fonts/jost-900.ttf') format('truetype');
             font-style: normal;
             font-weight: 900;
-            font-display: block;
+            font-display: swap;
         }
         body { 
             /*
@@ -206,12 +206,50 @@
                 padding-bottom: 3rem;
             }
 
+            main > section:first-child > div {
+                gap: 2rem;
+            }
+
             main > section:first-child h1 {
-                font-size: 2rem;
+                font-size: 1.75rem;
+                line-height: 1.35 !important;
             }
 
             main > section:first-child img {
-                max-height: 18rem;
+                max-height: 16rem;
+            }
+
+            main > section:first-child p {
+                font-size: 0.9rem;
+                line-height: 1.75;
+            }
+
+            main > section:first-child a {
+                width: 100%;
+                text-align: center;
+                padding-top: 0.75rem;
+                padding-bottom: 0.75rem;
+            }
+
+            main > section:nth-child(2) {
+                padding-top: 1.5rem;
+                padding-bottom: 1.5rem;
+            }
+
+            main > section:nth-child(2) > div:first-child {
+                padding-left: 1rem;
+                padding-right: 1rem;
+                margin-bottom: 1rem;
+            }
+
+            main > section:nth-child(2) h2 {
+                font-size: 1rem;
+            }
+
+            main > section:nth-child(2) .animate-marquee > a {
+                width: 9rem;
+                height: 6.25rem;
+                border-radius: 0.75rem;
             }
 
             #products {
@@ -228,6 +266,49 @@
 
             #products > div:nth-child(2) h2 {
                 font-size: 1.25rem;
+            }
+
+            #products > div:nth-child(3) {
+                gap: 0.625rem;
+            }
+
+            #products > div:nth-child(3) > template + div {
+                min-width: 0;
+            }
+
+            #products button {
+                font-size: 0.7rem;
+            }
+
+            #products .product-card {
+                padding: 0.625rem;
+                border-radius: 0.75rem;
+            }
+
+            #products .product-card .product-image {
+                margin-bottom: 0.5rem;
+            }
+
+            #products .product-card .product-name {
+                font-size: 0.8rem;
+            }
+
+            #products .product-card .product-description {
+                font-size: 0.65rem;
+                line-height: 1.5;
+            }
+
+            #products .product-card .variant-label {
+                font-size: 0.65rem;
+            }
+
+            #products .product-card .variant-option {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.65rem;
+            }
+
+            #products .product-card .product-price {
+                font-size: 0.9rem;
             }
 
             [x-show="selectedProduct"] > div {
@@ -403,33 +484,33 @@
                 <h2 class="text-2xl font-bold text-[#121212]" x-text="activeCategory === 'الكل' ? t('allProducts') : activeCategory"></h2>
                 <span class="text-xs text-gray-500 font-bold number" x-text="toEnglishNumber(filteredProducts().length) + ' ' + t('product')"></span>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
                 <template x-for="product in filteredProducts()" :key="product.id">
-                    <div @click="openProduct(product)" class="bg-white rounded-2xl overflow-hidden border border-gray-200 flex flex-col justify-between p-4 shadow-sm hover:shadow-md transition text-right cursor-pointer">
+                    <div @click="openProduct(product)" class="product-card bg-white rounded-xl overflow-hidden border border-gray-200 flex flex-col justify-between p-2.5 sm:p-3 shadow-sm hover:shadow-md transition text-right cursor-pointer">
                                 <div>
-                                    <div class="h-48 rounded-xl overflow-hidden bg-gray-100 mb-4">
-                                        <img :src="assetUrl(selectedVariant(product)?.image || product.image)" :alt="product.name" loading="lazy" decoding="async" class="w-full h-full object-cover">
+                                    <div class="product-image aspect-square rounded-lg overflow-hidden bg-gray-100 mb-3">
+                                        <img :src="assetUrl(selectedVariant(product)?.image || product.image)" :alt="product.name" loading="lazy" decoding="async" class="w-full h-full object-contain p-1">
                                     </div>
-                                    <h3 class="font-bold text-lg text-gray-900 mt-2 truncate" x-text="product.name"></h3>
-                                    <div class="flex items-center gap-2 my-1">
-                                        <p class="gold-accent font-black text-xl number" x-text="'₪ ' + toEnglishNumber(salePrice(product))"></p>
+                                    <h3 class="product-name font-bold text-sm sm:text-base text-gray-900 mt-2 truncate" x-text="product.name"></h3>
+                                    <div class="flex flex-wrap items-center gap-1.5 my-1">
+                                        <p class="product-price gold-accent font-black text-base sm:text-lg number" x-text="'₪ ' + toEnglishNumber(salePrice(product))"></p>
                                         <p x-show="discountPercent(product) > 0" class="text-gray-400 text-sm line-through number" x-text="'₪ ' + toEnglishNumber(originalPrice(product))"></p>
-                                        <span x-show="discountPercent(product) > 0" class="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded-full number" x-text="'-' + toEnglishNumber(discountPercent(product)) + '%'"></span>
+                                        <span x-show="discountPercent(product) > 0" class="bg-red-100 text-red-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full number" x-text="'-' + toEnglishNumber(discountPercent(product)) + '%'"></span>
                                     </div>
-                                    <p class="text-gray-500 text-xs line-clamp-2 leading-relaxed" x-text="product.description"></p>
+                                    <p class="product-description text-gray-500 text-[11px] sm:text-xs line-clamp-2 leading-relaxed" x-text="product.description"></p>
                                     <div x-show="productSizes(product).length" class="mt-3" @click.stop>
-                                        <p class="text-xs font-bold text-gray-700 mb-1" x-text="t('chooseSize')"></p>
-                                        <div class="flex flex-wrap gap-2">
+                                        <p class="variant-label text-xs font-bold text-gray-700 mb-1" x-text="t('chooseSize')"></p>
+                                        <div class="flex flex-wrap gap-1.5">
                                             <template x-for="size in productSizes(product)" :key="'card-size-' + product.id + size">
-                                                <button type="button" @click="selectVariantOption(product, 'size', size)" :disabled="!variantOptionAvailable(product, 'size', size)" :class="product.selectedSize === size ? 'bg-[#121212] text-white border-[#121212]' : (variantOptionAvailable(product, 'size', size) ? 'bg-white text-gray-700 border-gray-300' : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed')" class="relative border rounded-lg px-3 py-1.5 text-sm font-bold transition"><span x-text="toEnglishNumber(size)"></span><span x-show="!variantOptionAvailable(product, 'size', size)" class="absolute inset-0 flex items-center justify-center text-red-600 text-lg font-black pointer-events-none">×</span></button>
+                                                <button type="button" @click="selectVariantOption(product, 'size', size)" :disabled="!variantOptionAvailable(product, 'size', size)" :class="product.selectedSize === size ? 'bg-[#121212] text-white border-[#121212]' : (variantOptionAvailable(product, 'size', size) ? 'bg-white text-gray-700 border-gray-300' : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed')" class="variant-option relative border rounded-lg px-3 py-1.5 text-sm font-bold transition"><span x-text="toEnglishNumber(size)"></span><span x-show="!variantOptionAvailable(product, 'size', size)" class="absolute inset-0 flex items-center justify-center text-red-600 text-lg font-black pointer-events-none">×</span></button>
                                             </template>
                                         </div>
                                     </div>
                                     <div x-show="productColors(product).length" class="mt-2" @click.stop>
-                                        <p class="text-xs font-bold text-gray-700 mb-1" x-text="t('chooseColor')"></p>
-                                        <div class="flex flex-wrap gap-2">
+                                        <p class="variant-label text-xs font-bold text-gray-700 mb-1" x-text="t('chooseColor')"></p>
+                                        <div class="flex flex-wrap gap-1.5">
                                             <template x-for="color in productColors(product)" :key="'card-color-' + product.id + color">
-                                                <button type="button" @click="selectVariantOption(product, 'color', color)" :disabled="!variantOptionAvailable(product, 'color', color)" :class="product.selectedColor === color ? 'bg-[#D4AF37] text-black border-[#D4AF37]' : (variantOptionAvailable(product, 'color', color) ? 'bg-white text-gray-700 border-gray-300' : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed')" class="relative border rounded-lg px-3 py-1.5 text-sm font-bold transition"><span x-text="color"></span><span x-show="!variantOptionAvailable(product, 'color', color)" class="absolute inset-0 flex items-center justify-center text-red-600 text-lg font-black pointer-events-none">×</span></button>
+                                                <button type="button" @click="selectVariantOption(product, 'color', color)" :disabled="!variantOptionAvailable(product, 'color', color)" :class="product.selectedColor === color ? 'bg-[#D4AF37] text-black border-[#D4AF37]' : (variantOptionAvailable(product, 'color', color) ? 'bg-white text-gray-700 border-gray-300' : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed')" class="variant-option relative border rounded-lg px-3 py-1.5 text-sm font-bold transition"><span x-text="color"></span><span x-show="!variantOptionAvailable(product, 'color', color)" class="absolute inset-0 flex items-center justify-center text-red-600 text-lg font-black pointer-events-none">×</span></button>
                                             </template>
                                         </div>
                                     </div>
@@ -936,6 +1017,22 @@
             document.querySelectorAll('[data-i18n]').forEach(element => {
                 const key = element.dataset.i18n;
                 if (this.translations[this.language][key]) element.textContent = this.t(key);
+            });
+        },
+
+        async refreshCatalog() {
+            const response = await fetch(`${this.apiUrl}/products`, { cache: 'no-store' });
+            if (!response.ok) throw new Error('تعذر تحديث المنتجات');
+            const products = await response.json();
+            this.products = products.map(product => {
+                const initial = product.variants?.find(v => v.stock > 0) || product.variants?.[0];
+                const available = product.variants?.some(v => Number(v.stock) > 0);
+                const current = this.products.find(item => item.id === product.id);
+                product.selectedVariantId = current?.selectedVariantId ?? (available ? initial?.id : null);
+                product.selectedSize = current?.selectedSize ?? (available ? (initial?.size || '') : '');
+                product.selectedColor = current?.selectedColor ?? (available ? (initial?.color || '') : '');
+                product.selectedQuantity = current?.selectedQuantity || 1;
+                return product;
             });
         },
 
@@ -1471,6 +1568,7 @@
                     alert('تمت إضافة النمرة واللون والصورة');
                     this.variantParent = null;
                     this.newVariant = { size: '', color: '', stock: 0, image: '' };
+                    await this.refreshCatalog();
                     await this.loadAdminData();
                 },
 
@@ -1524,6 +1622,7 @@
                             this.newProduct = { name: '', category: '', original_price: '', sale_price: '', size: '', color: '', stock: 0, image: '', description: '' };
                             const fileInput = document.querySelector('input[type="file"]');
                             if(fileInput) fileInput.value = '';
+                            await this.refreshCatalog();
                             await this.loadAdminData();
                         } else {
                             alert('خطأ في الحفظ: ' + (data.error || 'غير مصرح'));
@@ -1557,16 +1656,26 @@
                     const index = this.adminProducts.findIndex(product => product.id === payload.id);
                     if (index >= 0) this.adminProducts[index] = { ...payload };
                     this.editingProduct = this.emptyProduct();
+                    await this.refreshCatalog();
+                    await this.loadAdminData();
                     alert('تم حفظ تعديلات المنتج');
                 },
                 async updateStock(product, stock) {
                     const response = await fetch(`${this.apiUrl}/admin/products/${product.id}/stock`, { method:'PATCH', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({stock:Number(stock)}) });
-                    if (response.ok) product.stock = Number(stock); else alert('تعذر تعديل المخزون');
+                    if (response.ok) {
+                        product.stock = Number(stock);
+                        await this.refreshCatalog();
+                        await this.loadAdminData();
+                    } else alert('تعذر تعديل المخزون');
                 },
                 async deleteProduct(product) {
                     if (!confirm('حذف هذا المنتج؟')) return;
                     const response = await fetch(`${this.apiUrl}/admin/products/${product.id}`, {method:'DELETE', credentials:'include'});
-                    if (response.ok) this.adminProducts = this.adminProducts.filter(item => item.id !== product.id); else alert('تعذر حذف المنتج');
+                    if (response.ok) {
+                        this.adminProducts = this.adminProducts.filter(item => item.id !== product.id);
+                        await this.refreshCatalog();
+                        await this.loadAdminData();
+                    } else alert('تعذر حذف المنتج');
                 },
                 async updateOrderStatus(order, status) {
                     const response = await fetch(`${this.apiUrl}/admin/orders/${order.id}`, {method:'PATCH', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status})});
