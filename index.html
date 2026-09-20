@@ -1249,7 +1249,7 @@
                         credentials: 'include',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            whiteImage: logoWhiteUpload || undefined,
+                            whiteImage:this.logoWhiteUpload || undefined,
                             darkImage: this.logoDarkUpload || undefined
                         })
                     });
@@ -1260,8 +1260,8 @@
                     }
                     if (data.logoWhite) this.logoWhite = data.logoWhite;
                     if (data.logoDark) this.logoDark = data.logoDark;
-                    logoWhiteUpload = '';
-                    logoDarkUpload = '';
+this.logoWhiteUpload = '';
+this.logoDarkUpload = '';
                     alert('تم حفظ الشعار');
                 },
 
