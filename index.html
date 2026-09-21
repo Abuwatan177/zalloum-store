@@ -495,7 +495,7 @@
                 <template x-for="product in filteredProducts()" :key="product.id">
                     <div @click="openProduct(product)" class="product-card bg-white rounded-xl overflow-hidden border border-gray-200 flex flex-col justify-between p-2.5 sm:p-3 shadow-sm hover:shadow-md transition text-right cursor-pointer">
                                 <div>
-                                    <div class="product-image aspect-square rounded-lg overflow-hidden bg-gray-100 mb-3">
+                                    <div class="product-image aspect-square rounded-lg overflow-hidden bg-white mb-3">
                                         <img :src="imageUrl(selectedVariant(product)?.image || product.image, 520, 78)" :alt="product.name" loading="lazy" decoding="async" class="w-full h-full object-contain bg-white p-1">
                                     </div>
                                     <h3 class="product-name font-bold text-sm sm:text-base text-gray-900 mt-2 truncate" x-text="product.name"></h3>
@@ -546,7 +546,7 @@
         <div class="max-w-4xl mx-auto mt-8 bg-white rounded-3xl overflow-hidden shadow-2xl" @click.stop>
             <div class="flex justify-end p-3"><button @click="selectedProduct = null" class="text-gray-500 hover:text-black p-2 text-xl"><i class="fa-solid fa-xmark"></i></button></div>
             <div class="grid md:grid-cols-2 gap-6 p-6 pt-0 text-right">
-                <img :src="assetUrl(selectedVariant(selectedProduct)?.image || selectedProduct?.image)" :alt="selectedProduct?.name" class="w-full aspect-square object-contain rounded-2xl bg-white">
+                <img :src="imageUrl(selectedVariant(selectedProduct)?.image || selectedProduct?.image, 900, 84)" :alt="selectedProduct?.name" decoding="async" class="w-full aspect-square object-contain rounded-2xl bg-white">
                 <div class="flex flex-col justify-center">
                     <span class="text-sm text-gray-500" x-text="selectedProduct?.category"></span>
                     <h2 class="text-3xl font-black mt-2" x-text="selectedProduct?.name"></h2>
@@ -1023,7 +1023,7 @@
                 const index = url.pathname.indexOf(marker);
                 if (index < 0) return source;
                 url.pathname = `${url.pathname.slice(0, index)}/storage/v1/render/image/public/${url.pathname.slice(index + marker.length)}`;
-                url.search = `width=${width}&quality=${quality}`;
+                url.search = `width=${width}&quality=${quality}&resize=contain`;
                 return url.toString();
             } catch (_) {
                 return source;
@@ -1060,6 +1060,19 @@
                 product.selectedQuantity = current?.selectedQuantity || 1;
                 return product;
             });
+            this.preloadVariantImages(this.products);
+        },
+        preloadVariantImages(products) {
+            const urls = products.flatMap(product => (product.variants || []).map(variant =>
+                this.imageUrl(variant.image, 520, 78)
+            )).filter(Boolean);
+            const load = () => urls.forEach(url => {
+                const image = new Image();
+                image.decoding = 'async';
+                image.src = url;
+            });
+            if ('requestIdleCallback' in window) window.requestIdleCallback(load, { timeout: 2500 });
+            else window.setTimeout(load, 1200);
         },
 
         async init() {
@@ -1080,6 +1093,7 @@
                             product.selectedQuantity = 1;
                             return product;
                         });
+                        this.preloadVariantImages(this.products);
                         const settings = await settingsResponse.json();
                         this.heroImages = Array.isArray(settings.heroImages) ? settings.heroImages.slice(0, 3) : [];
                         this.logoWhite = settings.logoWhite || '';
