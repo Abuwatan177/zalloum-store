@@ -129,10 +129,11 @@ async function setting(key, value) {
 }
 
 app.get('/healthz', (req, res) => res.json({ ok: true }));
-app.get('/api/products', requireDb, async (req, res, next) => { try { res.json(await products()); } catch (e) { next(e); } });
+app.get('/api/products', requireDb, async (req, res, next) => { try { res.set('Cache-Control', 'public, max-age=30, stale-while-revalidate=60'); res.json(await products()); } catch (e) { next(e); } });
 app.get('/api/store-settings', async (req, res, next) => {
   if (!supabase) return res.json({ heroImages: [], logoWhite: '', logoDark: '', whatsappNumber: '', homepageText: null });
   try {
+    res.set('Cache-Control', 'public, max-age=30, stale-while-revalidate=60');
     if (settingsCache && Date.now() - settingsCacheAt < CACHE_TTL) return res.json(settingsCache);
     const { data, error } = await supabase.from('store_settings').select('key,value'); if (error) throw error;
     const s = Object.fromEntries((data || []).map(x => [x.key, x.value]));
